@@ -1,0 +1,33 @@
+@import '@theme/spacing.scss';
+@import '@theme/colors.scss';
+
+.main {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex: 1;
+    height: 90vh;
+}
+
+.buttonContainer {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    width: 100px;
+    height: 50px;
+    background-color: $primary-color;
+    color: $white;
+    border: none;
+    border-radius: map-get($spacing, l);
+
+    @include shadow-box;
+
+    &:hover {
+        background-color: $primary-dark;    
+    }   
+}

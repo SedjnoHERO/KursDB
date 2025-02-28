@@ -1,0 +1,177 @@
+@import '@theme/spacing.scss';
+@import '@theme/colors.scss';
+
+.defaultButton {
+    @include shadow-box(4px, get-spacing(m)); // базовый паддинг 16px
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, border 0.3s ease, color 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+  
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+  
+  // Размеры кнопки
+  .small {
+    padding: get-spacing(s) get-spacing(sm); // вертикально 8px, горизонтально 12px
+    font-size: 0.8rem;
+  }
+  
+  .medium {
+    padding: get-spacing(sm) get-spacing(m); // вертикально 12px, горизонтально 16px
+    font-size: 1rem;
+  }
+  
+  .large {
+    padding: get-spacing(ml) get-spacing(xl); // вертикально 16px, горизонтально 24px
+    font-size: 1.2rem;
+  }
+  
+  // Стилизация по цвету и варианту оформления
+  
+  // --- PRIMARY ---
+  .primary.solid {
+    background-color: $primary-color;
+    color: $white;
+    border: none;
+  }
+  .primary.solid:hover {
+    background-color: $primary-dark;
+  }
+  
+  .primary.outline {
+    background-color: transparent;
+    border: 2px solid $primary-color;
+    color: $primary-color;
+  }
+  .primary.outline:hover {
+    background-color: $primary-light;
+  }
+  
+  .primary.ghost {
+    background-color: transparent;
+    border: none;
+    color: $primary-color;
+  }
+  .primary.ghost:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+  }
+  
+  // --- SECONDARY ---
+  .secondary.solid {
+    background-color: $secondary-color;
+    color: $white;
+    border: none;
+  }
+  .secondary.solid:hover {
+    background-color: darken($secondary-color, 10%);
+  }
+  
+  .secondary.outline {
+    background-color: transparent;
+    border: 2px solid $secondary-color;
+    color: $secondary-color;
+  }
+  .secondary.outline:hover {
+    background-color: lighten($secondary-color, 30%);
+  }
+  
+  .secondary.ghost {
+    background-color: transparent;
+    border: none;
+    color: $secondary-color;
+  }
+  .secondary.ghost:hover {
+    background-color: rgba(127, 140, 141, 0.1);
+  }
+  
+  // --- DANGER ---
+  .danger.solid {
+    background-color: $danger-color;
+    color: $white;
+    border: none;
+  }
+  .danger.solid:hover {
+    background-color: darken($danger-color, 10%);
+  }
+  
+  .danger.outline {
+    background-color: transparent;
+    border: 2px solid $danger-color;
+    color: $danger-color;
+  }
+  .danger.outline:hover {
+    background-color: lighten($danger-color, 30%);
+  }
+  
+  .danger.ghost {
+    background-color: transparent;
+    border: none;
+    color: $danger-color;
+  }
+  .danger.ghost:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+  }
+  
+  // --- WARNING ---
+  .warning.solid {
+    background-color: $warning-color;
+    color: $black;
+    border: none;
+  }
+  .warning.solid:hover {
+    background-color: darken($warning-color, 10%);
+  }
+  
+  .warning.outline {
+    background-color: transparent;
+    border: 2px solid $warning-color;
+    color: $warning-color;
+  }
+  .warning.outline:hover {
+    background-color: lighten($warning-color, 30%);
+  }
+  
+  .warning.ghost {
+    background-color: transparent;
+    border: none;
+    color: $warning-color;
+  }
+  .warning.ghost:hover {
+    background-color: rgba(241, 196, 15, 0.1);
+  }
+  
+  // --- SUCCESS ---
+  .success.solid {
+    background-color: $success-color;
+    color: $white;
+    border: none;
+  }
+  .success.solid:hover {
+    background-color: darken($success-color, 10%);
+  }
+  
+  .success.outline {
+    background-color: transparent;
+    border: 2px solid $success-color;
+    color: $success-color;
+  }
+  .success.outline:hover {
+    background-color: lighten($success-color, 30%);
+  }
+  
+  .success.ghost {
+    background-color: transparent;
+    border: none;
+    color: $success-color;
+  }
+  .success.ghost:hover {
+    background-color: rgba(46, 204, 113, 0.1);
+  }

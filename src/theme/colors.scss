@@ -1,0 +1,22 @@
+$primary-color: #3498db;
+$primary-light: #5dade2;
+$primary-dark: #2e86c1;
+
+$warning-color: #f1c40f;
+$danger-color: #e74c3c;
+$success-color: #2ecc71;
+
+$gray-dark: #7f8c8d;
+$secondary-color: $gray-dark;
+
+$white: #ffffff;
+$black: #000000;
+$gray-light: #ecf0f1;
+
+$shadow-color: rgba(0, 0, 0, 0.15);
+
+@mixin shadow-box($radius: 4px, $padding: 16px) {
+    box-shadow: 0 4px 6px $shadow-color, 0 8px 12px rgba(0, 0, 0, 0.2);
+    border-radius: $radius;
+    padding: $padding;
+}
