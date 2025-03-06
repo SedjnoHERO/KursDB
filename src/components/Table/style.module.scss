@@ -28,35 +28,98 @@
 
 .tableContainer {
   background: var(--background-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-primary);
   overflow: hidden;
 
   .tableHeader {
-    padding: 20px 24px;
+    padding: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-primary);
-    background: linear-gradient(to right, var(--background-primary), var(--background-secondary));
+    background: var(--background-primary);
 
     .title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 600;
-      color: var(--primary);
-      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      margin: 0;
     }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actionButton {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .addButton {
+      background: var(--primary);
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: var(--primary-dark);
+      }
+    }
+
+    .editButton {
+      background: var(--background-secondary);
+      border-color: var(--border-primary);
+      color: var(--text-primary);
+
+      &:hover:not(:disabled) {
+        background: var(--background-hover);
+      }
+    }
+
+    .deleteButton {
+      background: var(--background-secondary);
+      border-color: var(--border-primary);
+      color: var(--danger);
+
+      &:hover:not(:disabled) {
+        background: var(--danger-light);
+        border-color: var(--danger);
+      }
+    }
+  }
+
+  .loading {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-secondary);
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
 
+    th, td {
+      padding: 16px 24px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-primary);
+    }
+
     th {
       background: var(--background-primary);
-      padding: 12px 24px;
-      text-align: left;
       font-weight: 500;
       font-size: 13px;
       color: var(--text-secondary);
@@ -65,14 +128,62 @@
     }
 
     td {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border-primary);
       font-size: 14px;
       color: var(--text-primary);
     }
 
-    tr:hover td {
-      background-color: var(--background-hover);
+    tr {
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover td {
+        background-color: var(--background-hover);
+      }
+
+      &.selected td {
+        background-color: var(--primary-lightest);
+      }
+    }
+  }
+
+  .formField {
+    margin-bottom: 16px;
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-primary);
+      border-radius: 6px;
+      font-size: 14px;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+    }
+  }
+
+  .submitButton {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background: var(--primary-dark);
     }
   }
 }
@@ -114,5 +225,20 @@
       }
     }
   }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  
+  button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
+
+td.actions {
+  width: 200px;
+  white-space: nowrap;
 }
   
