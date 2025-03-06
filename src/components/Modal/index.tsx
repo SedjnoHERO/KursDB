@@ -1,25 +1,33 @@
-import { ReactNode } from 'react';
+import React from 'react';
+import { Button } from '@components';
 import styles from './style.module.scss';
-import { FaTimes } from 'react-icons/fa';
 
-interface ModalProps {
+interface IModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+export const Modal: React.FC<IModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+}) => {
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h3>{title}</h3>
-          <button className={styles.closeButton} onClick={onClose}>
-            <FaTimes />
-          </button>
+          <Button
+            variant="outline"
+            label="×"
+            onClick={onClose}
+            className={styles.closeButton}
+          />
         </div>
         <div className={styles.content}>{children}</div>
       </div>

@@ -1,207 +1,243 @@
 import React, { useEffect, useState } from 'react';
-import { Supabase } from '@api';
-import styles from './style.module.scss';
 import { FaPlus, FaSearch, FaEdit, FaTrash } from 'react-icons/fa';
-import { Button } from '@components';
-import { toast } from 'sonner';
+import { Button, Modal } from '@components';
+import { TableAPI, EntityType } from '@api';
+import { TABLE_TRANSLATIONS } from '@config';
+import styles from './style.module.scss';
 
 interface ITableProps {
-  type: 'AIRPORT' | 'AIRPLANE' | 'AIRLINE' | 'FLIGHT' | 'TICKET' | 'PASSENGER';
+  type: EntityType;
 }
 
 export const TableComponent: React.FC<ITableProps> = ({ type }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<any>({});
-  const [newData, setNewData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({});
 
-  const fetchData = async () => {
-    const { data, error } = await Supabase.from(type).select('*');
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    if (data && data.length > 0) {
-      setColumns(Object.keys(data[0]));
-      setData(data);
+  const fetchTableData = async () => {
+    const fetchedData = await TableAPI.fetchData(type);
+    if (fetchedData.length > 0) {
+      setColumns(Object.keys(fetchedData[0]));
+      setData(fetchedData);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchTableData();
   }, [type]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Вы уверены, что хотите удалить эту запись?')) return;
-
-    const { error } = await Supabase.from(type).delete().eq('id', id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success('Запись успешно удалена');
-    fetchData();
-  };
-
   const handleAdd = async () => {
-    const { error } = await Supabase.from(type).insert(newData);
-    if (error) {
-      toast.error(error.message);
-      return;
+    const result = await TableAPI.createRecord(type, formData);
+    if (result) {
+      setIsAddModalOpen(false);
+      setFormData({});
+      fetchTableData();
     }
-    toast.success('Запись успешно добавлена');
-    setNewData({});
-    fetchData();
   };
 
-  const handleEdit = async (row: any) => {
-    setSelectedRow(row);
-    setEditData({ ...row });
-    setIsEditing(true);
-  };
-
-  const handleUpdate = async () => {
+  const handleEdit = async () => {
     if (!selectedRow) return;
-
-    const { error } = await Supabase.from(type)
-      .update(editData)
-      .eq('id', selectedRow.id);
-
-    if (error) {
-      toast.error(error.message);
-      return;
+    const result = await TableAPI.updateRecord(type, selectedRow.id, formData);
+    if (result) {
+      setIsEditModalOpen(false);
+      setSelectedRow(null);
+      setFormData({});
+      fetchTableData();
     }
-
-    toast.success('Запись успешно обновлена');
-    setIsEditing(false);
-    setSelectedRow(null);
-    fetchData();
   };
+
+  const handleDelete = async () => {
+    if (!selectedRow) return;
+    const result = await TableAPI.deleteRecord(type, selectedRow.id);
+    if (result) {
+      setIsDeleteModalOpen(false);
+      setSelectedRow(null);
+      fetchTableData();
+    }
+  };
+
+  const renderForm = (onSubmit: () => void, initialData = {}) => (
+    <div className={styles.form}>
+      {columns.map(column => {
+        if (column === 'id' || column === 'created_at') return null;
+
+        const columnLabel =
+          TABLE_TRANSLATIONS[type]?.columns?.[column] || column;
+
+        return (
+          <div key={column} className={styles.field}>
+            <label>{columnLabel}</label>
+            <input
+              type="text"
+              value={formData[column] || ''}
+              onChange={e =>
+                setFormData({ ...formData, [column]: e.target.value })
+              }
+              placeholder={`Введите ${columnLabel.toLowerCase()}`}
+            />
+          </div>
+        );
+      })}
+      <div className={styles.actions}>
+        <Button variant="primary" label="Сохранить" onClick={onSubmit} />
+        <Button
+          variant="outline"
+          label="Отмена"
+          onClick={() => {
+            setIsAddModalOpen(false);
+            setIsEditModalOpen(false);
+            setFormData({});
+          }}
+        />
+      </div>
+    </div>
+  );
 
   const totalPages = Math.ceil(data.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, data.length);
 
   return (
-    <div className={styles.tableWrapper}>
-      <div className={styles.tableHeader}>
-        <h2 className={styles.title}>
-          {type.charAt(0) + type.slice(1).toLowerCase()}
-        </h2>
-        <div className={styles.actions}>
-          <Button variant="outline" leftIcon={<FaSearch />} label="Поиск" />
-          <Button
-            variant="primary"
-            leftIcon={<FaPlus />}
-            label="Добавить"
-            onClick={() => setIsEditing(false)}
-          />
+    <>
+      <div className={styles.tableWrapper}>
+        {/* Table header */}
+        <div className={styles.tableHeader}>
+          <h2 className={styles.title}>{TABLE_TRANSLATIONS[type].name}</h2>
+          <div className={styles.actions}>
+            <Button variant="outline" leftIcon={<FaSearch />} label="Поиск" />
+            <Button
+              variant="primary"
+              leftIcon={<FaPlus />}
+              label="Добавить"
+              onClick={() => setIsAddModalOpen(true)}
+            />
+          </div>
         </div>
-      </div>
 
-      <div className={styles.tableContainer}>
-        <table>
-          <thead>
-            <tr>
-              {columns.map((column, index) => (
-                <th key={index}>{column}</th>
-              ))}
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.slice(startIndex, endIndex).map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex}>{row[column]}</td>
+        {/* Table content */}
+        <div className={styles.tableContainer}>
+          <table>
+            <thead>
+              <tr>
+                {columns.map((column, index) => (
+                  <th key={index}>
+                    {TABLE_TRANSLATIONS[type].columns[column]}
+                  </th>
                 ))}
-                <td className={styles.actions}>
-                  <Button
-                    variant="outline"
-                    leftIcon={<FaEdit />}
-                    label="Изменить"
-                    onClick={() => handleEdit(row)}
-                  />
-                  <Button
-                    variant="outline"
-                    leftIcon={<FaTrash />}
-                    label="Удалить"
-                    onClick={() => handleDelete(row.id)}
-                  />
-                </td>
+                <th>Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.slice(startIndex, endIndex).map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {columns.map((column, colIndex) => (
+                    <td key={colIndex}>{row[column]}</td>
+                  ))}
+                  <td className={styles.actions}>
+                    <Button
+                      variant="outline"
+                      leftIcon={<FaEdit />}
+                      label="Изменить"
+                      onClick={() => {
+                        setSelectedRow(row);
+                        setFormData(row);
+                        setIsEditModalOpen(true);
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      leftIcon={<FaTrash />}
+                      label="Удалить"
+                      onClick={() => {
+                        setSelectedRow(row);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className={styles.pagination}>
+          <div className={styles.pageInfo}>
+            Показано {startIndex + 1}-{endIndex} из {data.length} записей
+          </div>
+          <div className={styles.pageControls}>
+            <Button
+              variant="outline"
+              label="Назад"
+              onClick={() => setCurrentPage(p => p - 1)}
+              disabled={currentPage === 1}
+            />
+            <span className={styles.pageNumber}>
+              {currentPage} из {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              label="Вперёд"
+              onClick={() => setCurrentPage(p => p + 1)}
+              disabled={currentPage === totalPages}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className={styles.pagination}>
-        <div className={styles.pageInfo}>
-          Показано {startIndex + 1}-{endIndex} из {data.length} записей
-        </div>
-        <div className={styles.pageControls}>
-          <Button
-            variant="outline"
-            label="Назад"
-            onClick={() => setCurrentPage(p => p - 1)}
-            disabled={currentPage === 1}
-          />
-          <Button
-            variant="outline"
-            label="Вперёд"
-            onClick={() => setCurrentPage(p => p + 1)}
-            disabled={currentPage === totalPages}
-          />
-        </div>
-      </div>
+      {/* Modals */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setFormData({});
+        }}
+        title={`Добавить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
+      >
+        {renderForm(handleAdd)}
+      </Modal>
 
-      {isEditing && (
-        <div className={styles.editForm}>
-          {columns.map(
-            (column, index) =>
-              column !== 'id' &&
-              column !== 'created_at' && (
-                <div key={index}>
-                  <label>{column}</label>
-                  <input
-                    type="text"
-                    value={editData[column] || ''}
-                    onChange={e =>
-                      setEditData({ ...editData, [column]: e.target.value })
-                    }
-                  />
-                </div>
-              ),
-          )}
-          <Button variant="primary" label="Сохранить" onClick={handleUpdate} />
-        </div>
-      )}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedRow(null);
+          setFormData({});
+        }}
+        title={`Изменить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
+      >
+        {renderForm(handleEdit, selectedRow)}
+      </Modal>
 
-      {!isEditing && (
-        <div className={styles.addForm}>
-          {columns.map(
-            (column, index) =>
-              column !== 'id' &&
-              column !== 'created_at' && (
-                <div key={index}>
-                  <label>{column}</label>
-                  <input
-                    type="text"
-                    value={newData[column] || ''}
-                    onChange={e =>
-                      setNewData({ ...newData, [column]: e.target.value })
-                    }
-                  />
-                </div>
-              ),
-          )}
-          <Button variant="primary" label="Добавить" onClick={handleAdd} />
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedRow(null);
+        }}
+        title="Подтверждение удаления"
+      >
+        <div className={styles.deleteConfirmation}>
+          <p>Вы действительно хотите удалить эту запись?</p>
+          <div className={styles.actions}>
+            <Button variant="primary" label="Удалить" onClick={handleDelete} />
+            <Button
+              variant="outline"
+              label="Отмена"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setSelectedRow(null);
+              }}
+            />
+          </div>
         </div>
-      )}
-    </div>
+      </Modal>
+    </>
   );
 };

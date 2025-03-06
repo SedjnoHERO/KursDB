@@ -1,5 +1,13 @@
-export const TABLE_TRANSLATIONS = {
-  AIRPORT: {
+import { EntityType } from "@api";
+
+export type TableColumns = {
+  [K in EntityType]: {
+    name: string;
+    columns: Record<string, string>;
+  };
+};
+
+export const TABLE_TRANSLATIONS: TableColumns = {  AIRPORT: {
     name: 'Аэропорты',
     columns: {
       id: 'ID',
