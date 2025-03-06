@@ -84,7 +84,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
   };
 
-  const renderForm = (onSubmit: () => void, initialData = {}) => (
+  const renderForm = (onSubmit: () => void) => (
     <div className={styles.form}>
       {columns.map(column => {
         if (column === 'id' || column === 'created_at') return null;
@@ -93,7 +93,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           TABLE_TRANSLATIONS[type]?.columns?.[column] || column;
 
         return (
-          <div key={column} className={styles.field}>
+          <div key={`field-${column}`} className={styles.field}>
             <label>{columnLabel}</label>
             <input
               type="text"
@@ -124,18 +124,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
-
-  const renderSkeletonRow = () => (
-    <tr>
-      {Array(columns.length + 1)
-        .fill(0)
-        .map((_, index) => (
-          <td key={index} style={{ padding: '16px 24px' }}>
-            <Skeleton />
-          </td>
-        ))}
-    </tr>
-  );
 
   return (
     <>
@@ -181,53 +169,73 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           <table>
             <thead>
               <tr>
-                {columns.map((column, index) => (
-                  <th key={index}>
-                    {isLoading ? (
-                      <Skeleton />
-                    ) : (
-                      TABLE_TRANSLATIONS[type].columns[column]
-                    )}
-                  </th>
-                ))}
-                <th>Действия</th>
+                {columns.map(column => {
+                  const columnLabel =
+                    TABLE_TRANSLATIONS[type]?.columns?.[column] || column;
+                  return (
+                    <th key={`header-${column}`}>
+                      {isLoading ? (
+                        <Skeleton />
+                      ) : (
+                        <div className={styles.columnHeader}>
+                          <span className={styles.columnLabel}>
+                            {columnLabel}
+                          </span>
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
+                <th key="actions-header">
+                  <div className={styles.columnHeader}>
+                    <span className={styles.columnLabel}>Действия</span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
               {isLoading
                 ? Array(5)
                     .fill(0)
-                    .map((_, index) => renderSkeletonRow())
-                : filteredData
-                    .slice(startIndex, endIndex)
-                    .map((row, rowIndex) => (
-                      <tr key={rowIndex}>
-                        {columns.map((column, colIndex) => (
-                          <td key={colIndex}>{row[column]}</td>
-                        ))}
-                        <td className={styles.actions}>
-                          <Button
-                            variant="outline"
-                            leftIcon={<FaEdit />}
-                            label="Изменить"
-                            onClick={() => {
-                              setSelectedRow(row);
-                              setFormData(row);
-                              setIsEditModalOpen(true);
-                            }}
-                          />
-                          <Button
-                            variant="outline"
-                            leftIcon={<FaTrash />}
-                            label="Удалить"
-                            onClick={() => {
-                              setSelectedRow(row);
-                              setIsDeleteModalOpen(true);
-                            }}
-                          />
-                        </td>
+                    .map((_, index) => (
+                      <tr key={`skeleton-row-${index}`}>
+                        {Array(columns.length + 1)
+                          .fill(0)
+                          .map((_, colIndex) => (
+                            <td key={`skeleton-cell-${index}-${colIndex}`}>
+                              <Skeleton />
+                            </td>
+                          ))}
                       </tr>
-                    ))}
+                    ))
+                : filteredData.slice(startIndex, endIndex).map(row => (
+                    <tr key={row.id}>
+                      {columns.map(column => (
+                        <td key={`${row.id}-${column}`}>{row[column]}</td>
+                      ))}
+                      <td className={styles.actions}>
+                        <Button
+                          variant="outline"
+                          leftIcon={<FaEdit />}
+                          label="Изменить"
+                          onClick={() => {
+                            setSelectedRow(row);
+                            setFormData(row);
+                            setIsEditModalOpen(true);
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          leftIcon={<FaTrash />}
+                          label="Удалить"
+                          onClick={() => {
+                            setSelectedRow(row);
+                            setIsDeleteModalOpen(true);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
@@ -284,7 +292,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
         }}
         title={`Изменить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
       >
-        {renderForm(handleEdit, selectedRow)}
+        {renderForm(handleEdit)}
       </Modal>
 
       <Modal
