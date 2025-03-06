@@ -1,26 +1,118 @@
-.tableContainer {
-    overflow-x: auto;
-    max-width: 100%;
+@import '@theme/colors.scss';
+
+.tableWrapper {
+  background: $white;
+  border-radius: 12px;
+  box-shadow: $shadow-md;
+  overflow: hidden;
+}
+
+.tableHeader {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+
+  .title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $primary;
   }
-  
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+  }
+}
+
+.tableContainer {
+  background: var(--background-secondary);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-primary);
+  overflow: hidden;
+
+  .tableHeader {
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary);
+    background: linear-gradient(to right, var(--background-primary), var(--background-secondary));
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
-  }
-  
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  th {
-    background-color: #f4f4f4;
-  }
-  
-  @media (max-width: 768px) {
-    th, td {
-      padding: 6px;
+
+    th {
+      background: var(--background-primary);
+      padding: 12px 24px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-primary);
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    tr:hover td {
+      background-color: var(--background-hover);
     }
   }
+}
+
+.pagination {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+
+  .pageInfo {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+
+  .pageControls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    button {
+      padding: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: $white;
+      color: $primary;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f8fafc;
+        border-color: $primary-light;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
   

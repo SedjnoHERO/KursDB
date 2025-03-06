@@ -1,0 +1,1 @@
+export { useInternet } from './internet'

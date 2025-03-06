@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "incremental": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
     "useDefineForClassFields": true,
@@ -20,7 +21,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
 
     /* Aliases */
     "baseUrl": ".", 
@@ -29,8 +29,9 @@
       "@assets": ["./src/assets"], 
       "@pages": ["./src/pages"], 
       "@theme": ["./src/theme"],
-      "@database": ["./src/database"], 
+      "@api": ["src/api"], 
       "@hooks": ["./src/hooks"],
+      "@config": ["./src/config"],
     }
   },
   "include": ["src"]

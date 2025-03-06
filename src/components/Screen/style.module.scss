@@ -1,0 +1,17 @@
+@import '@theme/colors.scss';
+@import '@theme/spacing.scss';
+
+.main {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    padding: calc(#{$header-height} + get-spacing('l')) get-spacing('l') get-spacing('l');
+}

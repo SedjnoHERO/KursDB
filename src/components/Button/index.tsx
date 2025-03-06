@@ -1,45 +1,32 @@
 import React from 'react';
-import { Typography } from '../Typography';
+import { Typography } from '@components';
 import styles from './style.module.scss';
 
-type ButtonSize = 'small' | 'medium' | 'large';
-type ButtonColor = 'primary' | 'secondary' | 'danger' | 'warning' | 'success';
-type ButtonType = 'solid' | 'outline' | 'ghost';
-
 interface IButtonProps {
-  onClick: () => void;
   label: string;
-  size?: ButtonSize;
-  color?: ButtonColor;
-  buttonStyle?: string;
-  textStyles?: string;
-  type?: ButtonType;
+  leftIcon?: React.ReactElement;
+  variant?: 'primary' | 'outline';
+  onClick?: () => void;
+  className?: string;
   disabled?: boolean;
 }
 
 export const Button: React.FC<IButtonProps> = ({
+  label,
+  leftIcon,
+  variant = 'primary',
   onClick,
-  label = 'Button',
-  size = 'medium',
-  color = 'primary',
-  type = 'solid',
+  className,
   disabled = false,
-  buttonStyle,
-  textStyles,
 }) => {
-  const buttonClass = [
-    styles.defaultButton,
-    size && styles[size],
-    styles[color],
-    styles[type],
-    buttonStyle,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <button onClick={onClick} className={buttonClass} disabled={disabled}>
-      <Typography text={label} className={textStyles} />
+    <button
+      className={`${styles.button} ${styles[variant]} ${className || ''}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {leftIcon && <span className={styles.icon}>{leftIcon}</span>}
+      <Typography text={label} className="buttonText" />
     </button>
   );
 };

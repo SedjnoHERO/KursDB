@@ -1,32 +1,60 @@
 import { useState } from 'react';
-
-import { Button, TableComponent } from '@components';
-
-import { toast, Toaster } from 'sonner';
+import { TableComponent } from '@components';
 import styles from './style.module.scss';
+import { FaUserCircle } from 'react-icons/fa';
+
+type EntityType =
+  | 'AIRPORT'
+  | 'AIRPLANE'
+  | 'AIRLINE'
+  | 'FLIGHT'
+  | 'TICKET'
+  | 'PASSENGER';
+
+interface MenuItem {
+  type: EntityType;
+  label: string;
+}
 
 export const Home = () => {
-  const message = () => {
-    toast.loading('Загрузка данных, ожидайте');
-  };
+  const [type, setType] = useState<EntityType>('PASSENGER');
 
-  const [type, setType] = useState<
-    'AIRPORT' | 'AIRPLANE' | 'AIRLINE' | 'FLIGHT' | 'TICKET' | 'PASSENGER'
-  >('PASSENGER');
+  const menuItems: MenuItem[] = [
+    { type: 'PASSENGER', label: 'Пассажиры' },
+    { type: 'AIRPLANE', label: 'Самолёты' },
+    { type: 'AIRLINE', label: 'Авиакомпании' },
+    { type: 'TICKET', label: 'Билеты' },
+    { type: 'FLIGHT', label: 'Рейсы' },
+    { type: 'AIRPORT', label: 'Аэропорты' },
+  ];
 
   return (
-    <div className={styles.main}>
-      <Toaster position="bottom-right" />
-      <Button label="Нажать" size="large" onClick={message} />
-      <div className={styles.buttonContainer}>
-        <Button label="Пассажиры" onClick={() => setType('PASSENGER')} />
-        <Button label="Самолёты" onClick={() => setType('AIRPLANE')} />
-        <Button label="Авиакомпании" onClick={() => setType('AIRLINE')} />
-        <Button label="Билеты" onClick={() => setType('TICKET')} />
-        <Button label="Полёты" onClick={() => setType('FLIGHT')} />
-        <Button label="Аэропорты" onClick={() => setType('AIRPORT')} />
-      </div>
-      <TableComponent type={type} />
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <span className={styles.logo}>AeroControl</span>
+          <nav className={styles.nav}>
+            {menuItems.map(item => (
+              <div
+                key={item.type}
+                className={`${styles.navItem} ${
+                  type === item.type ? styles.active : ''
+                }`}
+                onClick={() => setType(item.type)}
+              >
+                {item.label}
+              </div>
+            ))}
+          </nav>
+          <div className={styles.userInfo}>
+            <FaUserCircle size={20} />
+          </div>
+        </div>
+      </header>
+
+      <main className={styles.content}>
+        <TableComponent type={type} />
+      </main>
     </div>
   );
 };
