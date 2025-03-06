@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
-import { Button, Modal } from '@components';
+import { Button, Modal, Skeleton } from '@components';
 import { TableAPI, EntityType } from '@api';
 import { TABLE_TRANSLATIONS } from '@config';
+import { toast } from 'sonner';
 import styles from './style.module.scss';
 
 interface ITableProps {
@@ -21,13 +22,23 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [formData, setFormData] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchTableData = async () => {
+    setIsLoading(true);
+    toast.loading('Идет загрузка, пожалуйста подождите...', {
+      position: 'bottom-right',
+      duration: Infinity,
+    });
+
     const fetchedData = await TableAPI.fetchData(type);
     if (fetchedData.length > 0) {
       setColumns(Object.keys(fetchedData[0]));
       setData(fetchedData);
     }
+
+    setIsLoading(false);
+    toast.dismiss();
   };
 
   useEffect(() => {
@@ -114,11 +125,27 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
 
+  const renderSkeletonRow = () => (
+    <tr>
+      {Array(columns.length + 1)
+        .fill(0)
+        .map((_, index) => (
+          <td key={index} style={{ padding: '16px 24px' }}>
+            <Skeleton />
+          </td>
+        ))}
+    </tr>
+  );
+
   return (
     <>
       <div className={styles.tableWrapper}>
         <div className={styles.tableHeader}>
-          <h2 className={styles.title}>{TABLE_TRANSLATIONS[type].name}</h2>
+          {isLoading ? (
+            <Skeleton type="title" />
+          ) : (
+            <h2 className={styles.title}>{TABLE_TRANSLATIONS[type].name}</h2>
+          )}
           <div className={styles.searchContainer}>
             <div className={styles.searchInput}>
               <FaSearch className={styles.searchIcon} />
@@ -127,6 +154,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                 placeholder="Поиск..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -136,12 +164,14 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
               leftIcon={<FaPlus />}
               label="Добавить"
               onClick={() => setIsAddModalOpen(true)}
+              disabled={isLoading}
             />
             <div className={styles.filters}>
               <Button
                 variant="outline"
                 leftIcon={<FaFilter />}
                 label="Фильтры"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -153,65 +183,82 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
               <tr>
                 {columns.map((column, index) => (
                   <th key={index}>
-                    {TABLE_TRANSLATIONS[type].columns[column]}
+                    {isLoading ? (
+                      <Skeleton />
+                    ) : (
+                      TABLE_TRANSLATIONS[type].columns[column]
+                    )}
                   </th>
                 ))}
                 <th>Действия</th>
               </tr>
             </thead>
             <tbody>
-              {filteredData.slice(startIndex, endIndex).map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  {columns.map((column, colIndex) => (
-                    <td key={colIndex}>{row[column]}</td>
-                  ))}
-                  <td className={styles.actions}>
-                    <Button
-                      variant="outline"
-                      leftIcon={<FaEdit />}
-                      label="Изменить"
-                      onClick={() => {
-                        setSelectedRow(row);
-                        setFormData(row);
-                        setIsEditModalOpen(true);
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      leftIcon={<FaTrash />}
-                      label="Удалить"
-                      onClick={() => {
-                        setSelectedRow(row);
-                        setIsDeleteModalOpen(true);
-                      }}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(5)
+                    .fill(0)
+                    .map((_, index) => renderSkeletonRow())
+                : filteredData
+                    .slice(startIndex, endIndex)
+                    .map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {columns.map((column, colIndex) => (
+                          <td key={colIndex}>{row[column]}</td>
+                        ))}
+                        <td className={styles.actions}>
+                          <Button
+                            variant="outline"
+                            leftIcon={<FaEdit />}
+                            label="Изменить"
+                            onClick={() => {
+                              setSelectedRow(row);
+                              setFormData(row);
+                              setIsEditModalOpen(true);
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            leftIcon={<FaTrash />}
+                            label="Удалить"
+                            onClick={() => {
+                              setSelectedRow(row);
+                              setIsDeleteModalOpen(true);
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    ))}
             </tbody>
           </table>
         </div>
 
         <div className={styles.pagination}>
           <div className={styles.pageInfo}>
-            Показано {startIndex + 1}-{endIndex} из {filteredData.length}{' '}
-            записей
+            {isLoading ? (
+              <Skeleton style={{ width: '200px' }} />
+            ) : (
+              `Показано ${startIndex + 1}-${endIndex} из ${filteredData.length} записей`
+            )}
           </div>
           <div className={styles.pageControls}>
             <Button
               variant="outline"
               label="Назад"
               onClick={() => setCurrentPage(p => p - 1)}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isLoading}
             />
             <span className={styles.pageNumber}>
-              {currentPage} из {totalPages}
+              {isLoading ? (
+                <Skeleton style={{ width: '50px' }} />
+              ) : (
+                `${currentPage} из ${totalPages}`
+              )}
             </span>
             <Button
               variant="outline"
               label="Вперёд"
               onClick={() => setCurrentPage(p => p + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isLoading}
             />
           </div>
         </div>

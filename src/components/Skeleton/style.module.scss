@@ -1,0 +1,35 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--background-primary) 25%,
+    var(--background-hover) 37%,
+    var(--background-primary) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton 1.4s ease infinite;
+  border-radius: 4px;
+
+  &.text {
+    height: 16px;
+    width: 100%;
+  }
+
+  &.title {
+    height: 24px;
+    width: 200px;
+  }
+
+  &.button {
+    height: 36px;
+    width: 100px;
+  }
+}
+
+@keyframes skeleton {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+} 
