@@ -1,48 +1,23 @@
 @import '@theme/colors.scss';
 
 .tableWrapper {
-  background: $white;
-  border-radius: 12px;
-  box-shadow: $shadow-md;
-  overflow: hidden;
-}
-
-.tableHeader {
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e2e8f0;
-
-  .title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: $primary;
-  }
-
-  .actions {
-    display: flex;
-    gap: 1rem;
-  }
-}
-
-.tableContainer {
   background: var(--background-secondary);
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-primary);
   overflow: hidden;
+  margin-bottom: 24px;
 
   .tableHeader {
-    padding: 24px;
+    padding: 20px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: var(--background-secondary);
     border-bottom: 1px solid var(--border-primary);
-    background: var(--background-primary);
 
     .title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
       color: var(--text-primary);
       margin: 0;
@@ -52,178 +27,189 @@
       display: flex;
       gap: 8px;
     }
+  }
 
-    .actionButton {
+  .searchContainer {
+    background: var(--background-secondary);
+    display: flex;
+    align-items: center;
+
+    .searchInput {
+      position: relative;
+      flex: 1;
+      width: 800px;
+
+      input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border: 1px solid var(--border-primary);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+        background: var(--background-primary);
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+        }
+
+        &::placeholder {
+          color: var(--text-secondary);
+        }
+      }
+
+      .searchIcon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+    }
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th, td {
+        padding: 16px 24px;
+        text-align: left;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      th {
+        background: var(--background-primary);
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 24px;
+      }
+
+      td {
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-primary);
+        background: var(--background-secondary);
+      }
+
+      tbody tr {
+        transition: all 0.2s;
+
+        &:hover {
+          td {
+            background: var(--background-hover);
+          }
+        }
+
+        &:last-child td {
+          border-bottom: none;
+        }
+      }
+
+      .actions {
+        transition: opacity 0.2s;
+        display: flex;
+        gap: 8px;
+      }
+
+      tr:hover .actions {
+        opacity: 1;
+      }
+    }
+  }
+
+  .pagination {
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--background-secondary);
+    border-top: 1px solid var(--border-primary);
+
+    .pageInfo {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .pageControls {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.2s;
+      gap: 12px;
 
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
-
-    .addButton {
-      background: var(--primary);
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: var(--primary-dark);
-      }
-    }
-
-    .editButton {
-      background: var(--background-secondary);
-      border-color: var(--border-primary);
-      color: var(--text-primary);
-
-      &:hover:not(:disabled) {
-        background: var(--background-hover);
-      }
-    }
-
-    .deleteButton {
-      background: var(--background-secondary);
-      border-color: var(--border-primary);
-      color: var(--danger);
-
-      &:hover:not(:disabled) {
-        background: var(--danger-light);
-        border-color: var(--danger);
+      .pageNumber {
+        font-size: 14px;
+        color: var(--text-primary);
+        font-weight: 500;
+        padding: 0 8px;
       }
     }
   }
+}
 
-  .loading {
-    padding: 40px;
-    text-align: center;
-    color: var(--text-secondary);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-
-    th, td {
-      padding: 16px 24px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-primary);
-    }
-
-    th {
-      background: var(--background-primary);
-      font-weight: 500;
-      font-size: 13px;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    td {
-      font-size: 14px;
-      color: var(--text-primary);
-    }
-
-    tr {
-      cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover td {
-        background-color: var(--background-hover);
-      }
-
-      &.selected td {
-        background-color: var(--primary-lightest);
-      }
-    }
-  }
-
-  .formField {
-    margin-bottom: 16px;
+.form {
+  .field {
+    margin-bottom: 20px;
 
     label {
       display: block;
       margin-bottom: 8px;
       font-size: 14px;
-      color: var(--text-secondary);
+      font-weight: 500;
+      color: var(--text-primary);
     }
 
     input {
       width: 100%;
-      padding: 10px;
+      padding: 10px 16px;
       border: 1px solid var(--border-primary);
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 14px;
+      transition: all 0.2s;
+      background: var(--background-primary);
 
       &:focus {
         outline: none;
         border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+      }
+
+      &::placeholder {
+        color: var(--text-secondary);
       }
     }
   }
 
-  .submitButton {
-    width: 100%;
-    padding: 12px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background: var(--primary-dark);
-    }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-primary);
   }
 }
 
-.pagination {
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid #e2e8f0;
+.deleteConfirmation {
+  text-align: center;
+  padding: 20px 0;
 
-  .pageInfo {
-    color: #64748b;
-    font-size: 0.875rem;
+  p {
+    color: var(--text-primary);
+    margin-bottom: 24px;
+    font-size: 16px;
   }
 
-  .pageControls {
+  .actions {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
-
-    button {
-      padding: 0.5rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      background: $white;
-      color: $primary;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: #f8fafc;
-        border-color: $primary-light;
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
+    gap: 12px;
+    justify-content: center;
   }
 }
 

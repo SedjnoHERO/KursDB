@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaSearch, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
 import { Button, Modal } from '@components';
 import { TableAPI, EntityType } from '@api';
 import { TABLE_TRANSLATIONS } from '@config';
@@ -13,12 +13,14 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(5);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredData, setFilteredData] = useState<any[]>([]);
 
   const fetchTableData = async () => {
     const fetchedData = await TableAPI.fetchData(type);
@@ -31,6 +33,15 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   useEffect(() => {
     fetchTableData();
   }, [type]);
+
+  useEffect(() => {
+    const filtered = data.filter(item =>
+      Object.values(item).some(value =>
+        String(value).toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    );
+    setFilteredData(filtered);
+  }, [data, searchQuery]);
 
   const handleAdd = async () => {
     const result = await TableAPI.createRecord(type, formData);
@@ -99,28 +110,43 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     </div>
   );
 
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, data.length);
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
 
   return (
     <>
       <div className={styles.tableWrapper}>
-        {/* Table header */}
         <div className={styles.tableHeader}>
           <h2 className={styles.title}>{TABLE_TRANSLATIONS[type].name}</h2>
+          <div className={styles.searchContainer}>
+            <div className={styles.searchInput}>
+              <FaSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Поиск..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
           <div className={styles.actions}>
-            <Button variant="outline" leftIcon={<FaSearch />} label="Поиск" />
             <Button
               variant="primary"
               leftIcon={<FaPlus />}
               label="Добавить"
               onClick={() => setIsAddModalOpen(true)}
             />
+            <div className={styles.filters}>
+              <Button
+                variant="outline"
+                leftIcon={<FaFilter />}
+                label="Фильтры"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Table content */}
         <div className={styles.tableContainer}>
           <table>
             <thead>
@@ -134,7 +160,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
               </tr>
             </thead>
             <tbody>
-              {data.slice(startIndex, endIndex).map((row, rowIndex) => (
+              {filteredData.slice(startIndex, endIndex).map((row, rowIndex) => (
                 <tr key={rowIndex}>
                   {columns.map((column, colIndex) => (
                     <td key={colIndex}>{row[column]}</td>
@@ -166,10 +192,10 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className={styles.pagination}>
           <div className={styles.pageInfo}>
-            Показано {startIndex + 1}-{endIndex} из {data.length} записей
+            Показано {startIndex + 1}-{endIndex} из {filteredData.length}{' '}
+            записей
           </div>
           <div className={styles.pageControls}>
             <Button
@@ -191,7 +217,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
         </div>
       </div>
 
-      {/* Modals */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => {

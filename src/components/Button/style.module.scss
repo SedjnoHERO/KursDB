@@ -2,40 +2,52 @@
 @import '@theme/spacing.scss';
 
 .button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: get-spacing('s');
-  padding: get-spacing('s') get-spacing('m');
-  border-radius: get-spacing('xs');
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   border: 1px solid transparent;
-  box-shadow: $shadow-sm;
+  white-space: nowrap;
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
   &.primary {
-    background-color: $primary;
-    color: $white;
+    background: var(--primary);
+    color: white;
 
     &:hover:not(:disabled) {
-      background-color: $primary-light;
-      box-shadow: $shadow-md;
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
   }
 
   &.outline {
-    background-color: transparent;
-    border-color: $primary;
-    color: $primary;
+    background: transparent;
+    border-color: var(--border-primary);
+    color: var(--text-primary);
 
     &:hover:not(:disabled) {
-      background-color: rgba($primary, 0.1);
-      box-shadow: $shadow-md;
+      background: var(--background-hover);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+  }
+
+  &.danger {
+    background: var(--danger);
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: var(--danger-dark);
     }
   }
 
