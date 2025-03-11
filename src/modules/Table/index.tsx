@@ -286,9 +286,9 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
 
     if (column === 'Price' && typeof value === 'number') {
-      return new Intl.NumberFormat('ru-RU', {
+      return new Intl.NumberFormat('by-BY', {
         style: 'currency',
-        currency: 'RUB',
+        currency: 'BYN',
       }).format(value);
     }
 
@@ -298,25 +298,32 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const getColumnWidth = (column: string): string => {
     switch (column) {
       case 'PassengerID':
+        return '10px';
       case 'AirportID':
+        return '10px';
       case 'AirlineID':
+        return '10px';
       case 'AirplaneID':
+        return '10px';
       case 'FlightID':
+        return '10px';
       case 'TicketID':
-        return '80px';
+        return '10px';
       case 'Gender':
+        return '60px';
       case 'Role':
       case 'Status':
         return '120px';
       case 'Email':
-        return '200px';
+        return '100px';
       case 'Phone':
         return '150px';
       case 'Price':
-        return '120px';
+        return '100px';
       case 'PassportNumber':
+        return '100px';
       case 'PassportSeries':
-        return '140px';
+        return '10px';
       default:
         return 'auto';
     }
