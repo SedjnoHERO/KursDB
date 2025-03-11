@@ -7,72 +7,94 @@ export type TableColumns = {
   };
 };
 
-export const TABLE_TRANSLATIONS: TableColumns = {  AIRPORT: {
+export const TABLE_TRANSLATIONS: TableColumns = {
+  AIRPORT: {
     name: 'Аэропорты',
     columns: {
-      id: 'ID',
-      name: 'Название',
-      city: 'Город',
-      country: 'Страна',
-      iata_code: 'Код IATA',
-      created_at: 'Дата создания'
+      AirportID: 'ID',
+      Name: 'Название',
+      City: 'Город',
+      Country: 'Страна',
+      Code: 'Код'
     }
   },
   AIRPLANE: {
     name: 'Самолёты',
     columns: {
-      id: 'ID',
-      model: 'Модель',
-      capacity: 'Вместимость',
-      manufacturer: 'Производитель',
-      year: 'Год выпуска',
-      airline_id: 'ID авиакомпании',
-      created_at: 'Дата создания'
+      AirplaneID: 'ID',
+      AirlineID: 'ID авиакомпании',
+      Model: 'Модель',
+      Capacity: 'Вместимость',
+      airline: 'Авиакомпания'
     }
   },
   AIRLINE: {
     name: 'Авиакомпании',
     columns: {
-      id: 'ID',
-      name: 'Название',
-      country: 'Страна',
-      created_at: 'Дата создания'
+      AirlineID: 'ID',
+      Name: 'Название',
+      Country: 'Страна'
     }
   },
   FLIGHT: {
     name: 'Рейсы',
     columns: {
-      id: 'ID',
-      flight_number: 'Номер рейса',
-      departure_airport_id: 'ID аэропорта вылета',
-      arrival_airport_id: 'ID аэропорта прибытия',
-      airplane_id: 'ID самолета',
-      departure_time: 'Время вылета',
-      arrival_time: 'Время прибытия',
-      created_at: 'Дата создания'
+      FlightID: 'ID',
+      FlightNumber: 'Номер рейса',
+      AirplaneID: 'ID самолета',
+      DepartureAirportID: 'ID аэропорта вылета',
+      ArrivalAirportID: 'ID аэропорта прибытия',
+      DepartureTime: 'Время вылета',
+      ArrivalTime: 'Время прибытия',
+      airplane: 'Самолет',
+      departureAirport: 'Аэропорт вылета',
+      arrivalAirport: 'Аэропорт прибытия'
     }
   },
   TICKET: {
     name: 'Билеты',
     columns: {
-      id: 'ID',
-      flight_id: 'ID рейса',
-      passenger_id: 'ID пассажира',
-      seat_number: 'Номер места',
-      price: 'Цена',
-      created_at: 'Дата создания'
+      TicketID: 'ID',
+      FlightID: 'ID рейса',
+      PassengerID: 'ID пассажира',
+      PurchaseDate: 'Дата покупки',
+      SeatNumber: 'Номер места',
+      Price: 'Цена',
+      Status: 'Статус',
+      flight: 'Рейс',
+      passenger: 'Пассажир'
     }
   },
   PASSENGER: {
     name: 'Пассажиры',
     columns: {
-      id: 'ID',
-      first_name: 'Имя',
-      last_name: 'Фамилия',
-      passport_number: 'Номер паспорта',
-      email: 'Email',
-      phone: 'Телефон',
-      created_at: 'Дата создания'
+      PassengerID: 'ID',
+      Gender: 'Пол',
+      FirstName: 'Имя',
+      LastName: 'Фамилия',
+      PassportSeries: 'Серия паспорта',
+      PassportNumber: 'Номер паспорта',
+      DateOfBirth: 'Дата рождения',
+      Phone: 'Телефон',
+      Email: 'Email',
+      Role: 'Роль'
     }
+  }
+};
+
+export const VALUE_TRANSLATIONS = {
+  Gender: {
+    Male: 'Мужской',
+    Female: 'Женский'
+  },
+  Role: {
+    admin: 'Администратор',
+    user: 'Пользователь'
+  },
+  Status: {
+    booked: 'Забронирован',
+    paid: 'Оплачен',
+    cancelled: 'Отменён',
+    completed: 'Завершён'
   }
 }; 

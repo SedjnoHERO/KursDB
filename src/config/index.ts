@@ -1,1 +1,1 @@
-export { TABLE_TRANSLATIONS } from "./translations";
+export * from "./translations";

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
 import { Button, Modal, Skeleton } from '@components';
 import { TableAPI, EntityType } from '@api';
-import { TABLE_TRANSLATIONS } from '@config';
+import { TABLE_TRANSLATIONS, VALUE_TRANSLATIONS } from '@config';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
 
@@ -14,7 +14,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(7);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -24,7 +24,8 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Добавляем маппинг ID полей
+  const currentTypeRef = useRef(type);
+
   const idFields: Record<EntityType, string> = {
     AIRPORT: 'AirportID',
     AIRLINE: 'AirlineID',
@@ -34,34 +35,90 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     PASSENGER: 'PassengerID',
   };
 
-  const fetchTableData = async () => {
-    setIsLoading(true);
-    toast.loading('Идет загрузка, пожалуйста подождите...', {
-      position: 'bottom-right',
-      duration: Infinity,
-    });
-
-    const fetchedData = await TableAPI.fetchData(type);
-    if (fetchedData.length > 0) {
-      setColumns(Object.keys(fetchedData[0]));
-      setData(fetchedData);
-    }
-
+  const resetState = useCallback(() => {
+    setData([]);
+    setColumns([]);
+    setFilteredData([]);
+    setCurrentPage(1);
+    setSelectedRow(null);
+    setFormData({});
+    setSearchQuery('');
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDeleteModalOpen(false);
     setIsLoading(false);
     toast.dismiss();
-  };
+  }, []);
 
-  useEffect(() => {
-    fetchTableData();
+  const fetchTableData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      toast.loading('Идет загрузка, пожалуйста подождите...', {
+        position: 'bottom-right',
+        duration: Infinity,
+      });
+
+      const currentType = type;
+      const fetchedData = await TableAPI.fetchData(type);
+
+      if (currentType !== type || type !== currentTypeRef.current) {
+        return;
+      }
+
+      setData([]);
+      setFilteredData([]);
+      setColumns([]);
+
+      setTimeout(() => {
+        if (currentType === type && type === currentTypeRef.current) {
+          if (Array.isArray(fetchedData) && fetchedData.length > 0) {
+            const validColumns = Object.keys(fetchedData[0]).filter(Boolean);
+            setColumns(validColumns);
+            setData(fetchedData);
+            setFilteredData(fetchedData);
+          }
+          setIsLoading(false);
+          toast.dismiss();
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      if (type === currentTypeRef.current) {
+        setColumns([]);
+        setData([]);
+        setFilteredData([]);
+        setIsLoading(false);
+        toast.dismiss();
+      }
+    }
   }, [type]);
 
   useEffect(() => {
-    const filtered = data.filter(item =>
-      Object.values(item).some(value =>
-        String(value).toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    );
-    setFilteredData(filtered);
+    const prevType = currentTypeRef.current;
+    currentTypeRef.current = type;
+
+    if (prevType === 'TICKET' && type === 'FLIGHT') {
+      resetState();
+      setTimeout(() => {
+        fetchTableData();
+      }, 100);
+    } else {
+      resetState();
+      fetchTableData();
+    }
+  }, [type, resetState, fetchTableData]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredData(data);
+    } else {
+      const filtered = data.filter(item =>
+        Object.values(item).some(value =>
+          String(value).toLowerCase().includes(searchQuery.toLowerCase()),
+        ),
+      );
+      setFilteredData(filtered);
+    }
   }, [data, searchQuery]);
 
   const handleAdd = async () => {
@@ -76,7 +133,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const handleEdit = async () => {
     if (!selectedRow || !selectedRow[idFields[type]]) return;
 
-    // Создаем копию данных формы без ID поля
     const updateData = { ...formData };
     delete updateData[idFields[type]];
 
@@ -109,7 +165,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
   };
 
-  // Обновляем обработчик кнопок в таблице
   const renderActionButtons = (row: any) => (
     <td className={styles.actions}>
       <Button
@@ -134,7 +189,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     </td>
   );
 
-  // Обновляем форму редактирования
   const renderForm = (
     onSubmit: () => void,
     columns: string[],
@@ -145,7 +199,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   ) => (
     <div className={styles.form}>
       {columns.map((column: string) => {
-        // Пропускаем поле ID и created_at при редактировании
         if (column === idFields[type] || column === 'created_at') return null;
 
         const columnLabel =
@@ -185,6 +238,165 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+
+  const formatCellValue = (value: any, column: string) => {
+    if (value === null || value === undefined) return '-';
+
+    if (column.includes('Time') || column.includes('Date')) {
+      try {
+        const date = new Date(value);
+        return date.toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      } catch {
+        return value;
+      }
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Да' : 'Нет';
+    }
+
+    if (column === 'Gender' && typeof value === 'string') {
+      return (
+        VALUE_TRANSLATIONS.Gender[
+          value as keyof typeof VALUE_TRANSLATIONS.Gender
+        ] || value
+      );
+    }
+
+    if (column === 'Role' && typeof value === 'string') {
+      return (
+        VALUE_TRANSLATIONS.Role[
+          value as keyof typeof VALUE_TRANSLATIONS.Role
+        ] || value
+      );
+    }
+
+    if (column === 'Status' && typeof value === 'string') {
+      return (
+        VALUE_TRANSLATIONS.Status[
+          value as keyof typeof VALUE_TRANSLATIONS.Status
+        ] || value
+      );
+    }
+
+    if (column === 'Price' && typeof value === 'number') {
+      return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB',
+      }).format(value);
+    }
+
+    return value;
+  };
+
+  const getColumnWidth = (column: string): string => {
+    switch (column) {
+      case 'PassengerID':
+      case 'AirportID':
+      case 'AirlineID':
+      case 'AirplaneID':
+      case 'FlightID':
+      case 'TicketID':
+        return '80px';
+      case 'Gender':
+      case 'Role':
+      case 'Status':
+        return '120px';
+      case 'Email':
+        return '200px';
+      case 'Phone':
+        return '150px';
+      case 'Price':
+        return '120px';
+      case 'PassportNumber':
+      case 'PassportSeries':
+        return '140px';
+      default:
+        return 'auto';
+    }
+  };
+
+  const renderTableHeader = () => (
+    <thead>
+      <tr>
+        {columns.map(column => {
+          const columnLabel =
+            TABLE_TRANSLATIONS[type]?.columns?.[column] || column;
+          return (
+            <th
+              key={`header-${column}`}
+              style={{
+                width: getColumnWidth(column),
+                minWidth: getColumnWidth(column),
+              }}
+            >
+              {isLoading ? (
+                <Skeleton />
+              ) : (
+                <div className={styles.columnHeader}>
+                  <span className={styles.columnLabel}>{columnLabel}</span>
+                </div>
+              )}
+            </th>
+          );
+        })}
+        <th key="actions-header" style={{ width: '160px', minWidth: '160px' }}>
+          <div className={styles.columnHeader}>
+            <span className={styles.columnLabel}>Действия</span>
+          </div>
+        </th>
+      </tr>
+    </thead>
+  );
+
+  const renderTableBody = () => (
+    <tbody>
+      {isLoading ? (
+        Array(itemsPerPage)
+          .fill(0)
+          .map((_, index) => (
+            <tr key={`skeleton-row-${index}`}>
+              {Array(columns.length + 1)
+                .fill(0)
+                .map((_, colIndex) => (
+                  <td key={`skeleton-cell-${index}-${colIndex}`}>
+                    <Skeleton />
+                  </td>
+                ))}
+            </tr>
+          ))
+      ) : filteredData.length > 0 && columns.length > 0 ? (
+        filteredData.slice(startIndex, endIndex).map(row => (
+          <tr key={row[idFields[type]]}>
+            {columns.map(column => (
+              <td
+                key={`${row[idFields[type]]}-${column}`}
+                style={{
+                  width: getColumnWidth(column),
+                  minWidth: getColumnWidth(column),
+                }}
+              >
+                {formatCellValue(row[column], column)}
+              </td>
+            ))}
+            {renderActionButtons(row)}
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
+            Нет данных для отображения
+          </td>
+        </tr>
+      )}
+    </tbody>
+  );
 
   return (
     <>
@@ -227,59 +439,9 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
         </div>
 
         <div className={styles.tableContainer}>
-          <table>
-            <thead>
-              <tr>
-                {columns.map(column => {
-                  const columnLabel =
-                    TABLE_TRANSLATIONS[type]?.columns?.[column] || column;
-                  return (
-                    <th key={`header-${column}`}>
-                      {isLoading ? (
-                        <Skeleton />
-                      ) : (
-                        <div className={styles.columnHeader}>
-                          <span className={styles.columnLabel}>
-                            {columnLabel}
-                          </span>
-                        </div>
-                      )}
-                    </th>
-                  );
-                })}
-                <th key="actions-header">
-                  <div className={styles.columnHeader}>
-                    <span className={styles.columnLabel}>Действия</span>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading
-                ? Array(5)
-                    .fill(0)
-                    .map((_, index) => (
-                      <tr key={`skeleton-row-${index}`}>
-                        {Array(columns.length + 1)
-                          .fill(0)
-                          .map((_, colIndex) => (
-                            <td key={`skeleton-cell-${index}-${colIndex}`}>
-                              <Skeleton />
-                            </td>
-                          ))}
-                      </tr>
-                    ))
-                : filteredData.slice(startIndex, endIndex).map(row => (
-                    <tr key={row[idFields[type]]}>
-                      {columns.map(column => (
-                        <td key={`${row[idFields[type]]}-${column}`}>
-                          {row[column]}
-                        </td>
-                      ))}
-                      {renderActionButtons(row)}
-                    </tr>
-                  ))}
-            </tbody>
+          <table className={styles.table}>
+            {renderTableHeader()}
+            {renderTableBody()}
           </table>
         </div>
 

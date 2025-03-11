@@ -29,7 +29,6 @@ interface Airplane {
 interface Flight {
   FlightID: number;
   FlightNumber: string;
-  AirlineID: number;
   AirplaneID: number;
   DepartureAirportID: number;
   ArrivalAirportID: number;
@@ -39,12 +38,15 @@ interface Flight {
 
 interface Passenger {
   PassengerID: number;
-  FirstName: string;
-  LastName: string;
-  PassportNumber: string;
-  DateOfBirth: string; // ISO string для даты
-  Phone: string;
-  Email: string;
+  Gender: 'Male' | 'Female';
+  FirstName: string | null;
+  LastName: string | null;
+  PassportSeries: string | null;
+  PassportNumber: string | null;
+  DateOfBirth: string | null;
+  Phone: string | null;
+  Email: string | null;
+  Role: 'admin' | 'user' | null;
 }
 
 interface Ticket {
