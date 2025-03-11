@@ -24,6 +24,16 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Добавляем маппинг ID полей
+  const idFields: Record<EntityType, string> = {
+    AIRPORT: 'AirportID',
+    AIRLINE: 'AirlineID',
+    AIRPLANE: 'AirplaneID',
+    FLIGHT: 'FlightID',
+    TICKET: 'TicketID',
+    PASSENGER: 'PassengerID',
+  };
+
   const fetchTableData = async () => {
     setIsLoading(true);
     toast.loading('Идет загрузка, пожалуйста подождите...', {
@@ -64,8 +74,18 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   };
 
   const handleEdit = async () => {
-    if (!selectedRow) return;
-    const result = await TableAPI.updateRecord(type, selectedRow.id, formData);
+    if (!selectedRow || !selectedRow[idFields[type]]) return;
+
+    // Создаем копию данных формы без ID поля
+    const updateData = { ...formData };
+    delete updateData[idFields[type]];
+
+    const result = await TableAPI.updateRecord(
+      type,
+      selectedRow[idFields[type]],
+      updateData,
+    );
+
     if (result) {
       setIsEditModalOpen(false);
       setSelectedRow(null);
@@ -75,8 +95,13 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   };
 
   const handleDelete = async () => {
-    if (!selectedRow) return;
-    const result = await TableAPI.deleteRecord(type, selectedRow.id);
+    if (!selectedRow || !selectedRow[idFields[type]]) return;
+
+    const result = await TableAPI.deleteRecord(
+      type,
+      selectedRow[idFields[type]],
+    );
+
     if (result) {
       setIsDeleteModalOpen(false);
       setSelectedRow(null);
@@ -84,13 +109,49 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
   };
 
-  const renderForm = (onSubmit: () => void) => (
+  // Обновляем обработчик кнопок в таблице
+  const renderActionButtons = (row: any) => (
+    <td className={styles.actions}>
+      <Button
+        variant="outline"
+        leftIcon={<FaEdit />}
+        label="Изменить"
+        onClick={() => {
+          setSelectedRow(row);
+          setFormData(row);
+          setIsEditModalOpen(true);
+        }}
+      />
+      <Button
+        variant="outline"
+        leftIcon={<FaTrash />}
+        label="Удалить"
+        onClick={() => {
+          setSelectedRow(row);
+          setIsDeleteModalOpen(true);
+        }}
+      />
+    </td>
+  );
+
+  // Обновляем форму редактирования
+  const renderForm = (
+    onSubmit: () => void,
+    columns: string[],
+    formData: any,
+    setFormData: React.Dispatch<React.SetStateAction<any>>,
+    idFields: Record<EntityType, string>,
+    type: EntityType,
+  ) => (
     <div className={styles.form}>
-      {columns.map(column => {
-        if (column === 'id' || column === 'created_at') return null;
+      {columns.map((column: string) => {
+        // Пропускаем поле ID и created_at при редактировании
+        if (column === idFields[type] || column === 'created_at') return null;
 
         const columnLabel =
-          TABLE_TRANSLATIONS[type]?.columns?.[column] || column;
+          TABLE_TRANSLATIONS[type]?.columns?.[
+            column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
+          ] || column;
 
         return (
           <div key={`field-${column}`} className={styles.field}>
@@ -209,31 +270,13 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                       </tr>
                     ))
                 : filteredData.slice(startIndex, endIndex).map(row => (
-                    <tr key={row.id}>
+                    <tr key={row[idFields[type]]}>
                       {columns.map(column => (
-                        <td key={`${row.id}-${column}`}>{row[column]}</td>
+                        <td key={`${row[idFields[type]]}-${column}`}>
+                          {row[column]}
+                        </td>
                       ))}
-                      <td className={styles.actions}>
-                        <Button
-                          variant="outline"
-                          leftIcon={<FaEdit />}
-                          label="Изменить"
-                          onClick={() => {
-                            setSelectedRow(row);
-                            setFormData(row);
-                            setIsEditModalOpen(true);
-                          }}
-                        />
-                        <Button
-                          variant="outline"
-                          leftIcon={<FaTrash />}
-                          label="Удалить"
-                          onClick={() => {
-                            setSelectedRow(row);
-                            setIsDeleteModalOpen(true);
-                          }}
-                        />
-                      </td>
+                      {renderActionButtons(row)}
                     </tr>
                   ))}
             </tbody>
@@ -280,7 +323,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
         }}
         title={`Добавить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
       >
-        {renderForm(handleAdd)}
+        {renderForm(handleAdd, columns, formData, setFormData, idFields, type)}
       </Modal>
 
       <Modal
@@ -292,7 +335,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
         }}
         title={`Изменить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
       >
-        {renderForm(handleEdit)}
+        {renderForm(handleEdit, columns, formData, setFormData, idFields, type)}
       </Modal>
 
       <Modal

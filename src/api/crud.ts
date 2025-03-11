@@ -1,57 +1,231 @@
 import { Supabase } from './supabase';
 import { toast } from 'sonner';
+import { PostgrestError } from '@supabase/supabase-js';
 
 export type EntityType = 'AIRPORT' | 'AIRPLANE' | 'AIRLINE' | 'FLIGHT' | 'TICKET' | 'PASSENGER';
 
-export const TableAPI = {
-  async fetchData(type: EntityType) {
+// Базовые интерфейсы для каждой сущности
+interface Airport {
+  AirportID: number;
+  Name: string;
+  City: string;
+  Country: string;
+  Code: string;
+}
+
+interface Airline {
+  AirlineID: number;
+  Name: string;
+  Country: string;
+}
+
+interface Airplane {
+  AirplaneID: number;
+  AirlineID: number;
+  Model: string;
+  Capacity: number;
+}
+
+interface Flight {
+  FlightID: number;
+  FlightNumber: string;
+  AirlineID: number;
+  AirplaneID: number;
+  DepartureAirportID: number;
+  ArrivalAirportID: number;
+  DepartureTime: string; // ISO string для времени
+  ArrivalTime: string;
+}
+
+interface Passenger {
+  PassengerID: number;
+  FirstName: string;
+  LastName: string;
+  PassportNumber: string;
+  DateOfBirth: string; // ISO string для даты
+  Phone: string;
+  Email: string;
+}
+
+interface Ticket {
+  TicketID: number;
+  FlightID: number;
+  PassengerID: number;
+  PurchaseDate: string; // ISO string для времени
+  SeatNumber: string;
+  Price: number;
+  Status: 'BOOKED' | 'CANCELLED' | 'COMPLETED';
+}
+
+// Маппинг типов сущностей к их интерфейсам
+type EntityTypeToInterface = {
+  AIRPORT: Airport;
+  AIRLINE: Airline;
+  AIRPLANE: Airplane;
+  FLIGHT: Flight;
+  TICKET: Ticket;
+  PASSENGER: Passenger;
+};
+
+// Маппинг типов сущностей к их ID полям
+type EntityTypeToIDField = {
+  AIRPORT: 'AirportID';
+  AIRLINE: 'AirlineID';
+  AIRPLANE: 'AirplaneID';
+  FLIGHT: 'FlightID';
+  TICKET: 'TicketID';
+  PASSENGER: 'PassengerID';
+};
+
+class TableAPIService {
+  private readonly idFields: EntityTypeToIDField = {
+    AIRPORT: 'AirportID',
+    AIRLINE: 'AirlineID',
+    AIRPLANE: 'AirplaneID',
+    FLIGHT: 'FlightID',
+    TICKET: 'TicketID',
+    PASSENGER: 'PassengerID'
+  };
+
+  private handleError(error: unknown): never {
+    const message = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    if (error instanceof PostgrestError) {
+      switch (error.code) {
+        case '23505':
+          toast.error('Запись с такими данными уже существует');
+          break;
+        case '23503':
+          toast.error('Невозможно выполнить операцию: нарушение целостности данных');
+          break;
+        default:
+          toast.error(`Ошибка базы данных: ${error.message}`);
+      }
+    } else {
+      toast.error(message);
+    }
+    throw error;
+  }
+
+  async fetchData<T extends EntityType>(
+    type: T
+  ): Promise<EntityTypeToInterface[T][]> {
     try {
-      const { data, error } = await Supabase.from(type).select('*');
+      const { data, error } = await Supabase
+        .from(type)
+        .select('*')
+        .order(this.idFields[type], { ascending: false });
+
       if (error) throw error;
       return data || [];
     } catch (error) {
-      toast.error('Ошибка при загрузке данных');
+      this.handleError(error);
       return [];
     }
-  },
+  }
 
-  async createRecord(type: EntityType, newData: any) {
+  async createRecord<T extends EntityType>(
+    type: T,
+    newData: Omit<EntityTypeToInterface[T], EntityTypeToIDField[T]>
+  ): Promise<EntityTypeToInterface[T] | null> {
     try {
-      const { data, error } = await Supabase.from(type).insert(newData).select();
+      const { data, error } = await Supabase
+        .from(type)
+        .insert(newData)
+        .select()
+        .single();
+
       if (error) throw error;
       toast.success('Запись успешно добавлена');
       return data;
     } catch (error) {
-      toast.error('Ошибка при создании записи');
+      this.handleError(error);
       return null;
     }
-  },
+  }
 
-  async updateRecord(type: EntityType, id: number, updateData: any) {
+  async updateRecord<T extends EntityType>(
+    type: T,
+    id: number,
+    updateData: Partial<Omit<EntityTypeToInterface[T], EntityTypeToIDField[T]>>
+  ): Promise<EntityTypeToInterface[T] | null> {
     try {
       const { data, error } = await Supabase
         .from(type)
         .update(updateData)
-        .eq('id', id)
-        .select();
+        .eq(this.idFields[type], id as any)
+        .select()
+        .single();
+
       if (error) throw error;
       toast.success('Запись успешно обновлена');
       return data;
     } catch (error) {
-      toast.error('Ошибка при обновлении записи');
+      this.handleError(error);
       return null;
     }
-  },
+  }
 
-  async deleteRecord(type: EntityType, id: number) {
+  async deleteRecord<T extends EntityType>(
+    type: T,
+    id: number
+  ): Promise<boolean> {
     try {
-      const { error } = await Supabase.from(type).delete().eq('id', id);
+      const { error } = await Supabase
+        .from(type)
+        .delete()
+        .eq(this.idFields[type], id as any);
+
       if (error) throw error;
       toast.success('Запись успешно удалена');
       return true;
     } catch (error) {
-      toast.error('Ошибка при удалении записи');
+      this.handleError(error);
       return false;
     }
   }
-};
+
+  // Дополнительные методы для работы со связанными данными
+//   async fetchFlightWithDetails(flightId: number) {
+//     try {
+//       const { data, error } = await Supabase
+//         .from('FLIGHT')
+//         .select(`
+//           *,
+//           airline:AIRLINE(*),
+//           airplane:AIRPLANE(*),
+//           departure_airport:AIRPORT!DepartureAirportID(*),
+//           arrival_airport:AIRPORT!ArrivalAirportID(*)
+//         `)
+//         .eq('FlightID', flightId)
+//         .single();
+
+//       if (error) throw error;
+//       return data;
+//     } catch (error) {
+//       this.handleError(error);
+//       return null;
+//     }
+//   }
+
+//   async fetchTicketWithDetails(ticketId: number) {
+//     try {
+//       const { data, error } = await Supabase
+//         .from('TICKET')
+//         .select(`
+//           *,
+//           flight:FLIGHT(*),
+//           passenger:PASSENGER(*)
+//         `)
+//         .eq('TicketID', ticketId)
+//         .single();
+
+//       if (error) throw error;
+//       return data;
+//     } catch (error) {
+//       this.handleError(error);
+//       return null;
+//     }
+//   }
+}
+
+export const TableAPI = new TableAPIService();

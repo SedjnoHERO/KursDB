@@ -78,6 +78,10 @@
       border-collapse: separate;
       border-spacing: 0;
 
+      thead {
+        background: var(--primary);
+      }
+
       th, td {
         padding: 16px 24px;
         text-align: left;
