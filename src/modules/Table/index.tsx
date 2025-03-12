@@ -21,9 +21,10 @@ import styles from './style.module.scss';
 
 interface ITableProps {
   type: EntityType;
+  filters: any[];
 }
 
-export const TableComponent: React.FC<ITableProps> = ({ type }) => {
+export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,12 +35,12 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: 'ascending' | 'descending';
-  } | null>(null);
+    key: string | null;
+    direction: 'asc' | 'desc';
+  }>({ key: null, direction: 'asc' });
 
   const currentTypeRef = useRef(type);
 
@@ -55,11 +56,11 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const resetState = useCallback(() => {
     setData([]);
     setColumns([]);
-    setFilteredData([]);
     setCurrentPage(1);
     setSelectedRow(null);
     setFormData({});
     setSearchQuery('');
+    setSelectedFilters({});
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
     setIsDeleteModalOpen(false);
@@ -82,28 +83,15 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
         return;
       }
 
-      setData([]);
-      setFilteredData([]);
-      setColumns([]);
-
-      setTimeout(() => {
-        if (currentType === type && type === currentTypeRef.current) {
-          if (Array.isArray(fetchedData) && fetchedData.length > 0) {
-            const validColumns = Object.keys(fetchedData[0]);
-            setColumns(validColumns);
-            setData(fetchedData);
-            setFilteredData(fetchedData);
-          }
-          setIsLoading(false);
-          toast.dismiss();
-        }
-      }, 100);
+      setData(fetchedData);
+      setColumns(Object.keys(fetchedData[0] || {}));
+      setIsLoading(false);
+      toast.dismiss();
     } catch (error) {
       console.error('Error fetching data:', error);
       if (type === currentTypeRef.current) {
         setColumns([]);
         setData([]);
-        setFilteredData([]);
         setIsLoading(false);
         toast.dismiss();
       }
@@ -111,124 +99,54 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   }, [type]);
 
   useEffect(() => {
-    const prevType = currentTypeRef.current;
-    currentTypeRef.current = type;
-
-    if (prevType === 'TICKET' && type === 'FLIGHT') {
-      resetState();
-      setTimeout(() => {
-        fetchTableData();
-      }, 100);
-    } else {
-      resetState();
-      fetchTableData();
-    }
+    resetState();
+    fetchTableData();
   }, [type, resetState, fetchTableData]);
 
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredData(data);
-    } else {
-      const filtered = data.filter(item =>
-        Object.values(item).some(value =>
-          String(value).toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-      );
-      setFilteredData(filtered);
-    }
-  }, [data, searchQuery]);
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return data;
+    return [...data].sort((a, b) => {
+      const aValue = a[sortConfig.key as keyof typeof a];
+      const bValue = b[sortConfig.key as keyof typeof b];
 
-  const validateFormData = (
-    formData: any,
-    columns: string[],
-    idFields: Record<EntityType, string>,
-    type: EntityType,
-  ): boolean => {
-    const requiredFields = columns.filter(
-      column => column !== idFields[type] && column !== 'created_at',
-    );
-
-    for (const field of requiredFields) {
-      if (!formData[field] || formData[field].trim() === '') {
-        toast.error(`Поле "${field}" не может быть пустым`);
-        return false;
-      }
-
-      // Пример валидации для конкретных полей
-      if (field === 'Email' && !/\S+@\S+\.\S+/.test(formData[field])) {
-        toast.error('Некорректный формат email');
-        return false;
-      }
-
-      if (field === 'Phone' && !/^\+?\d{10,15}$/.test(formData[field])) {
-        toast.error('Некорректный формат телефона');
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const handleAdd = async () => {
-    console.log('Attempting to add record:', formData);
-
-    if (!validateFormData(formData, columns, idFields, type)) {
-      console.log('Validation failed');
-      return;
-    }
-
-    try {
-      const result = await TableAPI.createRecord(type, formData);
-      if (result) {
-        console.log('Record added successfully:', result);
-        setIsAddModalOpen(false);
-        setFormData({});
-        fetchTableData();
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc'
+          ? aValue - bValue
+          : bValue - aValue;
       } else {
-        console.log('Failed to add record');
+        return sortConfig.direction === 'asc'
+          ? String(aValue).localeCompare(String(bValue))
+          : String(bValue).localeCompare(String(aValue));
       }
-    } catch (error) {
-      console.error('Error adding record:', error);
-    }
-  };
+    });
+  }, [data, sortConfig]);
 
-  const handleEdit = async () => {
-    if (!selectedRow || !selectedRow[idFields[type]]) return;
-
-    const updateData = { ...formData };
-    delete updateData[idFields[type]];
-
-    const result = await TableAPI.updateRecord(
-      type,
-      selectedRow[idFields[type]],
-      updateData,
+  const filteredData = useMemo(() => {
+    return sortedData.filter(row =>
+      Object.entries(selectedFilters).every(([column, filterValue]) =>
+        filterValue ? String(row[column]) === filterValue : true,
+      ),
     );
+  }, [sortedData, selectedFilters]);
 
-    if (result) {
-      setIsEditModalOpen(false);
-      setSelectedRow(null);
-      setFormData({});
-      fetchTableData();
-    }
-  };
+  const highlightMatch = (text: any, query: string) => {
+    const textStr = String(text);
+    if (!query) return textStr;
+    const lowerText = textStr.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const index = lowerText.indexOf(lowerQuery);
 
-  const handleDelete = async () => {
-    if (!selectedRow || !selectedRow[idFields[type]]) return;
+    if (index === -1) return textStr;
 
-    try {
-      const result = await TableAPI.deleteRecord(
-        type,
-        selectedRow[idFields[type]],
-      );
-
-      if (result) {
-        setIsDeleteModalOpen(false);
-        setSelectedRow(null);
-        await fetchTableData();
-      }
-    } catch (error) {
-      console.error('Error deleting record:', error);
-    }
+    return (
+      <>
+        {textStr.substring(0, index)}
+        <span className={styles.highlightedText}>
+          {textStr.substring(index, index + query.length)}
+        </span>
+        {textStr.substring(index + query.length)}
+      </>
+    );
   };
 
   const renderActionButtons = (row: any) => (
@@ -502,29 +420,14 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
   };
 
-  const sortedData = useMemo(() => {
-    if (sortConfig !== null) {
-      return [...filteredData].sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return filteredData;
-  }, [filteredData, sortConfig]);
-
   const requestSort = (key: string) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
+    let direction: 'asc' | 'desc' = 'asc';
     if (
       sortConfig &&
       sortConfig.key === key &&
-      sortConfig.direction === 'ascending'
+      sortConfig.direction === 'asc'
     ) {
-      direction = 'descending';
+      direction = 'desc';
     }
     setSortConfig({ key, direction });
   };
@@ -589,14 +492,26 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           ))
       ) : filteredData.length > 0 && columns.length > 0 ? (
         filteredData.slice(startIndex, endIndex).map(row => {
-          const hasMatch = Object.values(row).some(value =>
-            String(value).toLowerCase().includes(searchQuery.toLowerCase()),
+          const matchCount = Object.values(row).reduce(
+            (count: number, value) => {
+              return (
+                count +
+                (String(value).toLowerCase().includes(searchQuery.toLowerCase())
+                  ? 1
+                  : 0)
+              );
+            },
+            0,
           );
 
           return (
             <tr
               key={row[idFields[type]]}
-              className={hasMatch ? styles.highlightedRow : ''}
+              className={
+                matchCount > 0 && matchCount !== columns.length
+                  ? styles.highlightedRow
+                  : ''
+              }
             >
               {columns.map(column => (
                 <td
@@ -604,6 +519,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                   style={{
                     width: getColumnWidth(column),
                     minWidth: getColumnWidth(column),
+                    backgroundColor: 'transparent',
                   }}
                 >
                   {formatCellValue(row[column], column)}
@@ -622,6 +538,103 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
       )}
     </tbody>
   );
+
+  const handleAdd = async () => {
+    console.log('Попытка добавить запись:', formData);
+
+    if (!validateFormData(formData, columns, idFields, type)) {
+      console.log('Проверка не удалась');
+      return;
+    }
+
+    try {
+      const result = await TableAPI.createRecord(type, formData);
+      if (result) {
+        console.log('Record added successfully:', result);
+        setIsAddModalOpen(false);
+        setFormData({});
+        fetchTableData();
+      } else {
+        console.log('Failed to add record');
+      }
+    } catch (error) {
+      console.error('Error adding record:', error);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!selectedRow || !selectedRow[idFields[type]]) return;
+
+    const updateData = { ...formData };
+    delete updateData[idFields[type]];
+
+    try {
+      const result = await TableAPI.updateRecord(
+        type,
+        selectedRow[idFields[type]],
+        updateData,
+      );
+
+      if (result) {
+        setIsEditModalOpen(false);
+        setSelectedRow(null);
+        setFormData({});
+        fetchTableData();
+      }
+    } catch (error) {
+      console.error('Error updating record:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedRow || !selectedRow[idFields[type]]) return;
+
+    try {
+      const result = await TableAPI.deleteRecord(
+        type,
+        selectedRow[idFields[type]],
+      );
+
+      if (result) {
+        setIsDeleteModalOpen(false);
+        setSelectedRow(null);
+        fetchTableData();
+      }
+    } catch (error) {
+      console.error('Error deleting record:', error);
+    }
+  };
+
+  const validateFormData = (
+    formData: any,
+    columns: string[],
+    idFields: Record<EntityType, string>,
+    type: EntityType,
+  ): boolean => {
+    const requiredFields = columns.filter(
+      column => column !== idFields[type] && column !== 'created_at',
+    );
+
+    for (const field of requiredFields) {
+      if (!formData[field] || formData[field].trim() === '') {
+        toast.error(`Поле "${field}" не может быть пустым`);
+        return false;
+      }
+
+      // Пример валидации для конкретных полей
+      if (field === 'Email' && !/\S+@\S+\.\S+/.test(formData[field])) {
+        toast.error('Некорректный формат email');
+        return false;
+      }
+
+      if (field === 'Phone' && !/^\+?\d{10,15}$/.test(formData[field])) {
+        toast.error('Некорректный формат телефона');
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   return (
     <>
@@ -642,6 +655,26 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                 onChange={e => setSearchQuery(e.target.value)}
                 disabled={isLoading}
               />
+              {searchQuery && (
+                <span className={styles.matchCount}>
+                  {filteredData.reduce((total, row) => {
+                    return (
+                      total +
+                      Object.values(row).reduce((count: number, value) => {
+                        return (
+                          count +
+                          (String(value)
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                            ? 1
+                            : 0)
+                        );
+                      }, 0)
+                    );
+                  }, 0)}{' '}
+                  совпадений
+                </span>
+              )}
             </div>
           </div>
           <div className={styles.actions}>

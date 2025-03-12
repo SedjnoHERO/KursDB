@@ -271,6 +271,12 @@ td.actions {
   background-color: red; 
 }
 
+.matchCount {
+  margin-left: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 .activeSortIcon {
   color: #FF9800;
   transition: color 0.3s ease, transform 0.3s ease;
