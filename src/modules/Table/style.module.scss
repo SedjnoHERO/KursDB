@@ -196,45 +196,42 @@
 }
 
 .form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .formRow {
+    display: flex;
+    gap: 16px;
+
+    .formColumn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
   .field {
-    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 
     label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-primary);
+      font-weight: bold;
     }
 
     input {
-      width: 100%;
-      padding: 10px 16px;
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      font-size: 14px;
-      transition: all 0.2s;
-      background: var(--background-primary);
-
-      &:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
-      }
-
-      &::placeholder {
-        color: var(--text-secondary);
-      }
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
   }
 
   .actions {
     display: flex;
-    gap: 8px;
     justify-content: flex-end;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-primary);
+    gap: 16px;
   }
 }
 
@@ -269,4 +266,33 @@ td.actions {
   width: 200px;
   white-space: nowrap;
 }
-  
+
+.activeSortIcon {
+  color: #FF9800;
+  transition: color 0.3s ease, transform 0.3s ease;
+  font-size: 20px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.activeSortIcon.asc::before {
+  content: '\2191';
+}
+
+.activeSortIcon.desc::before {
+  content: '\2193';
+}
+
+.inactiveSortIcon {
+  color: #90A4AE;
+  transition: color 0.3s ease;
+  font-size: 16px;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

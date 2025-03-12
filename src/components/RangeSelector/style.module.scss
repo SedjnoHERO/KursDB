@@ -1,0 +1,31 @@
+.range-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.range-input {
+  width: 60px;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  transition: border-color 0.3s ease;
+}
+
+.range-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.range-separator {
+  font-size: 16px;
+  color: var(--text-secondary);
+} 

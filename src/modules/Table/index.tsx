@@ -1,6 +1,19 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
-import { Button, Modal, Skeleton } from '@components';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
+import {
+  FaPlus,
+  FaSearch,
+  FaEdit,
+  FaTrash,
+  FaFilter,
+  FaSort,
+} from 'react-icons/fa';
+import { Button, Modal, Skeleton, Selector, RangeSelector } from '@components';
 import { TableAPI, EntityType } from '@api';
 import { TABLE_TRANSLATIONS, VALUE_TRANSLATIONS } from '@config';
 import { toast } from 'sonner';
@@ -23,6 +36,10 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'ascending' | 'descending';
+  } | null>(null);
 
   const currentTypeRef = useRef(type);
 
@@ -72,7 +89,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
       setTimeout(() => {
         if (currentType === type && type === currentTypeRef.current) {
           if (Array.isArray(fetchedData) && fetchedData.length > 0) {
-            const validColumns = Object.keys(fetchedData[0]).filter(Boolean);
+            const validColumns = Object.keys(fetchedData[0]);
             setColumns(validColumns);
             setData(fetchedData);
             setFilteredData(fetchedData);
@@ -121,12 +138,57 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
   }, [data, searchQuery]);
 
+  const validateFormData = (
+    formData: any,
+    columns: string[],
+    idFields: Record<EntityType, string>,
+    type: EntityType,
+  ): boolean => {
+    const requiredFields = columns.filter(
+      column => column !== idFields[type] && column !== 'created_at',
+    );
+
+    for (const field of requiredFields) {
+      if (!formData[field] || formData[field].trim() === '') {
+        toast.error(`Поле "${field}" не может быть пустым`);
+        return false;
+      }
+
+      // Пример валидации для конкретных полей
+      if (field === 'Email' && !/\S+@\S+\.\S+/.test(formData[field])) {
+        toast.error('Некорректный формат email');
+        return false;
+      }
+
+      if (field === 'Phone' && !/^\+?\d{10,15}$/.test(formData[field])) {
+        toast.error('Некорректный формат телефона');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleAdd = async () => {
-    const result = await TableAPI.createRecord(type, formData);
-    if (result) {
-      setIsAddModalOpen(false);
-      setFormData({});
-      fetchTableData();
+    console.log('Attempting to add record:', formData);
+
+    if (!validateFormData(formData, columns, idFields, type)) {
+      console.log('Validation failed');
+      return;
+    }
+
+    try {
+      const result = await TableAPI.createRecord(type, formData);
+      if (result) {
+        console.log('Record added successfully:', result);
+        setIsAddModalOpen(false);
+        setFormData({});
+        fetchTableData();
+      } else {
+        console.log('Failed to add record');
+      }
+    } catch (error) {
+      console.error('Error adding record:', error);
     }
   };
 
@@ -153,15 +215,19 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
   const handleDelete = async () => {
     if (!selectedRow || !selectedRow[idFields[type]]) return;
 
-    const result = await TableAPI.deleteRecord(
-      type,
-      selectedRow[idFields[type]],
-    );
+    try {
+      const result = await TableAPI.deleteRecord(
+        type,
+        selectedRow[idFields[type]],
+      );
 
-    if (result) {
-      setIsDeleteModalOpen(false);
-      setSelectedRow(null);
-      fetchTableData();
+      if (result) {
+        setIsDeleteModalOpen(false);
+        setSelectedRow(null);
+        await fetchTableData();
+      }
+    } catch (error) {
+      console.error('Error deleting record:', error);
     }
   };
 
@@ -189,6 +255,16 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     </td>
   );
 
+  const genderOptions = [
+    { value: 'Male', label: 'Мужской' },
+    { value: 'Female', label: 'Женский' },
+  ];
+
+  const roleOptions = [
+    { value: 'admin', label: 'Администратор' },
+    { value: 'user', label: 'Пользователь' },
+  ];
+
   const renderForm = (
     onSubmit: () => void,
     columns: string[],
@@ -196,44 +272,121 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     setFormData: React.Dispatch<React.SetStateAction<any>>,
     idFields: Record<EntityType, string>,
     type: EntityType,
-  ) => (
-    <div className={styles.form}>
-      {columns.map((column: string) => {
-        if (column === idFields[type] || column === 'created_at') return null;
+  ) => {
+    const formFields = columns.filter(
+      column => column !== idFields[type] && column !== 'created_at',
+    );
 
-        const columnLabel =
-          TABLE_TRANSLATIONS[type]?.columns?.[
-            column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
-          ] || column;
+    const half = Math.ceil(formFields.length / 2);
+    const leftFields = formFields.slice(0, half);
+    const rightFields = formFields.slice(half);
 
-        return (
-          <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
-            <input
-              type="text"
-              value={formData[column] || ''}
-              onChange={e =>
-                setFormData({ ...formData, [column]: e.target.value })
+    return (
+      <div className={styles.form}>
+        <div className={styles.formRow}>
+          <div className={styles.formColumn}>
+            {leftFields.map(column => {
+              const columnLabel =
+                TABLE_TRANSLATIONS[type]?.columns?.[
+                  column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
+                ] || column;
+
+              if (column === 'Gender') {
+                return (
+                  <div key={`field-${column}`} className={styles.field}>
+                    <label>{columnLabel}</label>
+                    <Selector
+                      options={genderOptions}
+                      onChange={value =>
+                        setFormData({ ...formData, [column]: value })
+                      }
+                    />
+                  </div>
+                );
               }
-              placeholder={`Введите ${columnLabel.toLowerCase()}`}
-            />
+
+              if (column === 'Role') {
+                return (
+                  <div key={`field-${column}`} className={styles.field}>
+                    <label>{columnLabel}</label>
+                    <Selector
+                      options={roleOptions}
+                      onChange={value =>
+                        setFormData({ ...formData, [column]: value })
+                      }
+                    />
+                  </div>
+                );
+              }
+
+              if (column === 'DateOfBirth') {
+                return (
+                  <div key={`field-${column}`} className={styles.field}>
+                    <label>{columnLabel}</label>
+                    <input
+                      type="date"
+                      value={formData[column] || ''}
+                      onChange={e =>
+                        setFormData({ ...formData, [column]: e.target.value })
+                      }
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <div key={`field-${column}`} className={styles.field}>
+                  <label>{columnLabel}</label>
+                  <input
+                    type="text"
+                    value={formData[column] || ''}
+                    onChange={e =>
+                      setFormData({ ...formData, [column]: e.target.value })
+                    }
+                    placeholder={`Введите ${columnLabel.toLowerCase()}`}
+                  />
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
-      <div className={styles.actions}>
-        <Button variant="primary" label="Сохранить" onClick={onSubmit} />
-        <Button
-          variant="outline"
-          label="Отмена"
-          onClick={() => {
-            setIsAddModalOpen(false);
-            setIsEditModalOpen(false);
-            setFormData({});
-          }}
-        />
+          <div className={styles.formColumn}>
+            {rightFields.map(column => {
+              const columnLabel =
+                TABLE_TRANSLATIONS[type]?.columns?.[
+                  column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
+                ] || column;
+
+              return (
+                <div key={`field-${column}`} className={styles.field}>
+                  <label>{columnLabel}</label>
+                  <input
+                    type="text"
+                    value={formData[column] || ''}
+                    onChange={e =>
+                      setFormData({ ...formData, [column]: e.target.value })
+                    }
+                    placeholder={`Введите ${columnLabel.toLowerCase()}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className={styles.actions}>
+          <Button variant="primary" label="Сохранить" onClick={onSubmit} />
+          <Button
+            variant="outline"
+            label="Отмена"
+            onClick={() => {
+              setIsAddModalOpen(false);
+              setIsEditModalOpen(false);
+              setFormData({});
+            }}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -329,6 +482,33 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     }
   };
 
+  const sortedData = useMemo(() => {
+    if (sortConfig !== null) {
+      return [...filteredData].sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return filteredData;
+  }, [filteredData, sortConfig]);
+
+  const requestSort = (key: string) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === 'ascending'
+    ) {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const renderTableHeader = () => (
     <thead>
       <tr>
@@ -341,13 +521,22 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
               style={{
                 width: getColumnWidth(column),
                 minWidth: getColumnWidth(column),
+                cursor: 'pointer',
               }}
+              onClick={() => requestSort(column)}
             >
               {isLoading ? (
                 <Skeleton />
               ) : (
                 <div className={styles.columnHeader}>
                   <span className={styles.columnLabel}>{columnLabel}</span>
+                  <FaSort
+                    className={
+                      sortConfig?.key === column
+                        ? styles.activeSortIcon
+                        : styles.inactiveSortIcon
+                    }
+                  />
                 </div>
               )}
             </th>
@@ -378,8 +567,8 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                 ))}
             </tr>
           ))
-      ) : filteredData.length > 0 && columns.length > 0 ? (
-        filteredData.slice(startIndex, endIndex).map(row => (
+      ) : sortedData.length > 0 && columns.length > 0 ? (
+        sortedData.slice(startIndex, endIndex).map(row => (
           <tr key={row[idFields[type]]}>
             {columns.map(column => (
               <td
@@ -491,6 +680,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           setFormData({});
         }}
         title={`Добавить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
+        size="lg" // Ensure the modal is large enough
       >
         {renderForm(handleAdd, columns, formData, setFormData, idFields, type)}
       </Modal>
@@ -503,6 +693,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           setFormData({});
         }}
         title={`Изменить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
+        size="lg" // Ensure the modal is large enough
       >
         {renderForm(handleEdit, columns, formData, setFormData, idFields, type)}
       </Modal>
@@ -514,20 +705,12 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           setSelectedRow(null);
         }}
         title="Подтверждение удаления"
+        size="xs"
+        onConfirm={handleDelete}
+        confirmText="Удалить"
       >
         <div className={styles.deleteConfirmation}>
-          <p>Вы действительно хотите удалить эту запись?</p>
-          <div className={styles.actions}>
-            <Button variant="primary" label="Удалить" onClick={handleDelete} />
-            <Button
-              variant="outline"
-              label="Отмена"
-              onClick={() => {
-                setIsDeleteModalOpen(false);
-                setSelectedRow(null);
-              }}
-            />
-          </div>
+          <p>Вы действительно хотите удалить запись?</p>
         </div>
       </Modal>
     </>
