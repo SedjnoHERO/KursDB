@@ -92,9 +92,8 @@ export const VALUE_TRANSLATIONS = {
     user: 'Пользователь'
   },
   Status: {
-    booked: 'Забронирован',
-    paid: 'Оплачен',
-    cancelled: 'Отменён',
-    completed: 'Завершён'
+    booked: 'Забронировано',
+    'checked-in': 'Подтверждено',
+    canceled: 'Отменено'
   }
 }; 

@@ -265,6 +265,12 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
     { value: 'user', label: 'Пользователь' },
   ];
 
+  const statusOptions = [
+    { value: 'booked', label: 'Забронировано' },
+    { value: 'checked-in', label: 'Подтверждено' },
+    { value: 'canceled', label: 'Отменено' },
+  ];
+
   const renderForm = (
     onSubmit: () => void,
     columns: string[],
@@ -311,6 +317,20 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                     <label>{columnLabel}</label>
                     <Selector
                       options={roleOptions}
+                      onChange={value =>
+                        setFormData({ ...formData, [column]: value })
+                      }
+                    />
+                  </div>
+                );
+              }
+
+              if (column === 'Status') {
+                return (
+                  <div key={`field-${column}`} className={styles.field}>
+                    <label>{columnLabel}</label>
+                    <Selector
+                      options={statusOptions}
                       onChange={value =>
                         setFormData({ ...formData, [column]: value })
                       }
@@ -463,7 +483,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
       case 'TicketID':
         return '10px';
       case 'Gender':
-        return '60px';
+        return '10px';
       case 'Role':
       case 'Status':
         return '120px';
@@ -567,23 +587,32 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
                 ))}
             </tr>
           ))
-      ) : sortedData.length > 0 && columns.length > 0 ? (
-        sortedData.slice(startIndex, endIndex).map(row => (
-          <tr key={row[idFields[type]]}>
-            {columns.map(column => (
-              <td
-                key={`${row[idFields[type]]}-${column}`}
-                style={{
-                  width: getColumnWidth(column),
-                  minWidth: getColumnWidth(column),
-                }}
-              >
-                {formatCellValue(row[column], column)}
-              </td>
-            ))}
-            {renderActionButtons(row)}
-          </tr>
-        ))
+      ) : filteredData.length > 0 && columns.length > 0 ? (
+        filteredData.slice(startIndex, endIndex).map(row => {
+          const hasMatch = Object.values(row).some(value =>
+            String(value).toLowerCase().includes(searchQuery.toLowerCase()),
+          );
+
+          return (
+            <tr
+              key={row[idFields[type]]}
+              className={hasMatch ? styles.highlightedRow : ''}
+            >
+              {columns.map(column => (
+                <td
+                  key={`${row[idFields[type]]}-${column}`}
+                  style={{
+                    width: getColumnWidth(column),
+                    minWidth: getColumnWidth(column),
+                  }}
+                >
+                  {formatCellValue(row[column], column)}
+                </td>
+              ))}
+              {renderActionButtons(row)}
+            </tr>
+          );
+        })
       ) : (
         <tr>
           <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
@@ -680,7 +709,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           setFormData({});
         }}
         title={`Добавить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
-        size="lg" // Ensure the modal is large enough
+        size={columns.length <= 5 ? 'sm' : 'lg'}
       >
         {renderForm(handleAdd, columns, formData, setFormData, idFields, type)}
       </Modal>
@@ -693,7 +722,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type }) => {
           setFormData({});
         }}
         title={`Изменить ${TABLE_TRANSLATIONS[type].name.toLowerCase()}`}
-        size="lg" // Ensure the modal is large enough
+        size={columns.length <= 5 ? 'sm' : 'lg'}
       >
         {renderForm(handleEdit, columns, formData, setFormData, idFields, type)}
       </Modal>
