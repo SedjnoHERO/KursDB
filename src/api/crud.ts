@@ -64,6 +64,15 @@ type EntityTypeToInterface = {
   TICKET: Ticket;
   PASSENGER: Passenger;
 };
+const idFields: Record<EntityType, string> = {
+  AIRPORT: 'AirportID',
+  AIRLINE: 'AirlineID',
+  AIRPLANE: 'AirplaneID',
+  FLIGHT: 'FlightID',
+  TICKET: 'TicketID',
+  PASSENGER: 'PassengerID',
+};
+
 
 class TableAPIService {
   private handleError(error: unknown): false {
@@ -109,10 +118,10 @@ class TableAPIService {
   ): Promise<EntityTypeToInterface[T] | null> {
     try {
       const { data, error } = await Supabase
-        .from(type)
-        .insert(newData)
-        .select()
-        .single();
+  .from(type)
+  .insert({ ...newData, [`${idFields[type]}`]: undefined }) 
+  .select()
+  .single();
 
       if (error) throw error;
       toast.success('Запись успешно добавлена');

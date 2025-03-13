@@ -13,7 +13,7 @@ import {
   FaFilter,
   FaSort,
 } from 'react-icons/fa';
-import { Button, Modal, Skeleton, Selector, RangeSelector } from '@components';
+import { Button, Modal, Skeleton, Selector } from '@components';
 import { TableAPI, EntityType } from '@api';
 import { TABLE_TRANSLATIONS, VALUE_TRANSLATIONS } from '@config';
 import { toast } from 'sonner';
@@ -21,10 +21,9 @@ import styles from './style.module.scss';
 
 interface ITableProps {
   type: EntityType;
-  filters: any[];
 }
 
-export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
+export const TableComponent = ({ type }: ITableProps) => {
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -191,114 +190,127 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
       column => column !== idFields[type] && column !== 'created_at',
     );
 
+    // Определяем, нужно ли разделять на колонки
+    const shouldSplitColumns = formFields.length > 4;
+
+    // Если нужно разделить на колонки, делим пополам, иначе все поля идут в один массив
     const half = Math.ceil(formFields.length / 2);
-    const leftFields = formFields.slice(0, half);
-    const rightFields = formFields.slice(half);
+    const leftFields = shouldSplitColumns
+      ? formFields.slice(0, half)
+      : formFields;
+    const rightFields = shouldSplitColumns ? formFields.slice(half) : [];
+
+    const renderField = (column: string) => {
+      const columnLabel =
+        TABLE_TRANSLATIONS[type]?.columns?.[
+          column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
+        ] || column;
+
+      if (column === 'Gender') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={genderOptions}
+              value={formData[column]}
+              onChange={value => setFormData({ ...formData, [column]: value })}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'Role') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={roleOptions}
+              value={formData[column]}
+              onChange={value => setFormData({ ...formData, [column]: value })}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'Status') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={statusOptions}
+              value={formData[column]}
+              onChange={value => setFormData({ ...formData, [column]: value })}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'DateOfBirth') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <input
+              type="date"
+              value={formData[column] || ''}
+              onChange={e =>
+                setFormData({ ...formData, [column]: e.target.value })
+              }
+            />
+          </div>
+        );
+      }
+
+      if (
+        column === 'PurchaseDate' ||
+        column === 'DepartureTime' ||
+        column === 'ArrivalTime'
+      ) {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <input
+              type="datetime-local"
+              value={formData[column] || ''}
+              onChange={e =>
+                setFormData({ ...formData, [column]: e.target.value })
+              }
+              className={styles.datetimeInput}
+              min={
+                column === 'ArrivalTime' ? formData.DepartureTime : undefined
+              }
+            />
+          </div>
+        );
+      }
+
+      return (
+        <div key={`field-${column}`} className={styles.field}>
+          <label>{columnLabel}</label>
+          <input
+            type="text"
+            value={formData[column] || ''}
+            onChange={e =>
+              setFormData({ ...formData, [column]: e.target.value })
+            }
+            placeholder={`Введите ${columnLabel.toLowerCase()}`}
+          />
+        </div>
+      );
+    };
 
     return (
       <div className={styles.form}>
-        <div className={styles.formRow}>
+        <div
+          className={`${styles.formRow} ${!shouldSplitColumns ? styles.singleColumn : ''}`}
+        >
           <div className={styles.formColumn}>
-            {leftFields.map(column => {
-              const columnLabel =
-                TABLE_TRANSLATIONS[type]?.columns?.[
-                  column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
-                ] || column;
-
-              if (column === 'Gender') {
-                return (
-                  <div key={`field-${column}`} className={styles.field}>
-                    <label>{columnLabel}</label>
-                    <Selector
-                      options={genderOptions}
-                      onChange={value =>
-                        setFormData({ ...formData, [column]: value })
-                      }
-                    />
-                  </div>
-                );
-              }
-
-              if (column === 'Role') {
-                return (
-                  <div key={`field-${column}`} className={styles.field}>
-                    <label>{columnLabel}</label>
-                    <Selector
-                      options={roleOptions}
-                      onChange={value =>
-                        setFormData({ ...formData, [column]: value })
-                      }
-                    />
-                  </div>
-                );
-              }
-
-              if (column === 'Status') {
-                return (
-                  <div key={`field-${column}`} className={styles.field}>
-                    <label>{columnLabel}</label>
-                    <Selector
-                      options={statusOptions}
-                      onChange={value =>
-                        setFormData({ ...formData, [column]: value })
-                      }
-                    />
-                  </div>
-                );
-              }
-
-              if (column === 'DateOfBirth') {
-                return (
-                  <div key={`field-${column}`} className={styles.field}>
-                    <label>{columnLabel}</label>
-                    <input
-                      type="date"
-                      value={formData[column] || ''}
-                      onChange={e =>
-                        setFormData({ ...formData, [column]: e.target.value })
-                      }
-                    />
-                  </div>
-                );
-              }
-
-              return (
-                <div key={`field-${column}`} className={styles.field}>
-                  <label>{columnLabel}</label>
-                  <input
-                    type="text"
-                    value={formData[column] || ''}
-                    onChange={e =>
-                      setFormData({ ...formData, [column]: e.target.value })
-                    }
-                    placeholder={`Введите ${columnLabel.toLowerCase()}`}
-                  />
-                </div>
-              );
-            })}
+            {leftFields.map(column => renderField(column))}
           </div>
-          <div className={styles.formColumn}>
-            {rightFields.map(column => {
-              const columnLabel =
-                TABLE_TRANSLATIONS[type]?.columns?.[
-                  column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
-                ] || column;
-
-              return (
-                <div key={`field-${column}`} className={styles.field}>
-                  <label>{columnLabel}</label>
-                  <input
-                    type="text"
-                    value={formData[column] || ''}
-                    onChange={e =>
-                      setFormData({ ...formData, [column]: e.target.value })
-                    }
-                    placeholder={`Введите ${columnLabel.toLowerCase()}`}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          {shouldSplitColumns && (
+            <div className={styles.formColumn}>
+              {rightFields.map(column => renderField(column))}
+            </div>
+          )}
         </div>
         <div className={styles.actions}>
           <Button variant="primary" label="Сохранить" onClick={onSubmit} />
@@ -507,7 +519,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
                   style={{
                     width: getColumnWidth(column),
                     minWidth: getColumnWidth(column),
-                    backgroundColor: 'transparent',
                   }}
                 >
                   {formatCellValue(row[column], column)}
@@ -527,16 +538,39 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
     </tbody>
   );
 
-  const handleAdd = async () => {
-    console.log('Попытка добавить запись:', formData);
+  const processFormData = (data: any, type: EntityType) => {
+    const processedData = { ...data };
 
-    if (!validateFormData(formData, columns, idFields, type)) {
+    // Определяем поля, которые должны быть числами для каждой таблицы
+    const numberFields: Record<EntityType, string[]> = {
+      AIRPLANE: ['AirlineID', 'Capacity'],
+      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirpor tID'],
+      TICKET: ['FlightID', 'PassengerID', 'Price'],
+      PASSENGER: [],
+      AIRPORT: [],
+      AIRLINE: [],
+    };
+
+    // Преобразуем строковые значения в числовые для указанных полей
+    numberFields[type].forEach(field => {
+      if (processedData[field]) {
+        processedData[field] = Number(processedData[field]);
+      }
+    });
+
+    return processedData;
+  };
+
+  const handleAdd = async () => {
+    const processedData = processFormData(formData, type);
+
+    if (!validateFormData(processedData, columns, idFields, type)) {
       console.log('Проверка не удалась');
       return;
     }
 
     try {
-      const result = await TableAPI.createRecord(type, formData);
+      const result = await TableAPI.createRecord(type, processedData);
       if (result) {
         console.log('Record added successfully:', result);
         setIsAddModalOpen(false);
@@ -605,18 +639,23 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
     );
 
     for (const field of requiredFields) {
-      if (!formData[field] || formData[field].trim() === '') {
+      const value = formData[field];
+
+      // Базовая проверка на пустоту
+      if (value === undefined || value === null || value === '') {
         toast.error(`Поле "${field}" не может быть пустым`);
         return false;
       }
 
-      // Пример валидации для конкретных полей
-      if (field === 'Email' && !/\S+@\S+\.\S+/.test(formData[field])) {
+      // Специальные проверки для строковых полей
+      const stringValue = String(value);
+
+      if (field === 'Email' && !/\S+@\S+\.\S+/.test(stringValue)) {
         toast.error('Некорректный формат email');
         return false;
       }
 
-      if (field === 'Phone' && !/^\+?\d{10,15}$/.test(formData[field])) {
+      if (field === 'Phone' && !/^\+?\d{10,15}$/.test(stringValue)) {
         toast.error('Некорректный формат телефона');
         return false;
       }
@@ -635,6 +674,19 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
     searchTimeoutRef.current = setTimeout(() => {
       setSearchQuery(value);
     }, 300); // Задержка в 300 мс
+  };
+
+  const handleAddModalOpen = () => {
+    const initialFormData =
+      type === 'PASSENGER'
+        ? {
+            Gender: 'Male',
+            Role: 'user',
+          }
+        : {};
+
+    setFormData(initialFormData);
+    setIsAddModalOpen(true);
   };
 
   return (
@@ -684,7 +736,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
               variant="primary"
               leftIcon={<FaPlus />}
               label="Добавить"
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={handleAddModalOpen}
               disabled={isLoading}
             />
             <div className={styles.filters}>
