@@ -129,10 +129,19 @@ class TableAPIService {
     updateData: Partial<EntityTypeToInterface[T]>
   ): Promise<EntityTypeToInterface[T] | null> {
     try {
+      const idField = {
+        AIRPORT: 'AirportID',
+        AIRLINE: 'AirlineID',
+        AIRPLANE: 'AirplaneID',
+        FLIGHT: 'FlightID',
+        TICKET: 'TicketID',
+        PASSENGER: 'PassengerID'
+      }[type] as string;
+
       const { data, error } = await Supabase
         .from(type)
         .update(updateData)
-        .eq('id', id)
+        .eq(idField, id)
         .select()
         .single();
 

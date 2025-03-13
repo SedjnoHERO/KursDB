@@ -43,6 +43,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
   }>({ key: null, direction: 'asc' });
 
   const currentTypeRef = useRef(type);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const idFields: Record<EntityType, string> = {
     AIRPORT: 'AirportID',
@@ -64,7 +65,10 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
     setIsDeleteModalOpen(false);
-    setIsLoading(false);
+    setSortConfig({ key: null, direction: 'asc' });
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
     toast.dismiss();
   }, []);
 
@@ -84,7 +88,11 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
       }
 
       setData(fetchedData);
-      setColumns(Object.keys(fetchedData[0] || {}));
+      if (fetchedData.length > 0) {
+        setColumns(Object.keys(fetchedData[0]));
+      } else {
+        setColumns([]);
+      }
       setIsLoading(false);
       toast.dismiss();
     } catch (error) {
@@ -99,9 +107,11 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
   }, [type]);
 
   useEffect(() => {
+    currentTypeRef.current = type;
     resetState();
+    setCurrentPage(1);
     fetchTableData();
-  }, [type, resetState, fetchTableData]);
+  }, [type]);
 
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return data;
@@ -128,26 +138,6 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
       ),
     );
   }, [sortedData, selectedFilters]);
-
-  const highlightMatch = (text: any, query: string) => {
-    const textStr = String(text);
-    if (!query) return textStr;
-    const lowerText = textStr.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-    const index = lowerText.indexOf(lowerQuery);
-
-    if (index === -1) return textStr;
-
-    return (
-      <>
-        {textStr.substring(0, index)}
-        <span className={styles.highlightedText}>
-          {textStr.substring(index, index + query.length)}
-        </span>
-        {textStr.substring(index + query.length)}
-      </>
-    );
-  };
 
   const renderActionButtons = (row: any) => (
     <td className={styles.actions}>
@@ -492,26 +482,24 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
           ))
       ) : filteredData.length > 0 && columns.length > 0 ? (
         filteredData.slice(startIndex, endIndex).map(row => {
-          const matchCount = Object.values(row).reduce(
-            (count: number, value) => {
-              return (
-                count +
-                (String(value).toLowerCase().includes(searchQuery.toLowerCase())
-                  ? 1
-                  : 0)
-              );
-            },
-            0,
-          );
+          const hasMatch = searchQuery
+            ? Object.entries(row).some(([column, value]) => {
+                const searchValue =
+                  column === 'Gender'
+                    ? VALUE_TRANSLATIONS.Gender[
+                        value as keyof typeof VALUE_TRANSLATIONS.Gender
+                      ]
+                    : value;
+                return String(searchValue)
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase());
+              })
+            : false;
 
           return (
             <tr
               key={row[idFields[type]]}
-              className={
-                matchCount > 0 && matchCount !== columns.length
-                  ? styles.highlightedRow
-                  : ''
-              }
+              className={hasMatch ? styles.highlightedRow : ''}
             >
               {columns.map(column => (
                 <td
@@ -583,6 +571,7 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
       }
     } catch (error) {
       console.error('Error updating record:', error);
+      toast.error('Ошибка при обновлении записи');
     }
   };
 
@@ -636,6 +625,18 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
     return true;
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchQuery(value);
+    }, 300); // Задержка в 300 мс
+  };
+
   return (
     <>
       <div className={styles.tableWrapper}>
@@ -651,30 +652,31 @@ export const TableComponent: React.FC<ITableProps> = ({ type, filters }) => {
               <input
                 type="text"
                 placeholder="Поиск..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 disabled={isLoading}
               />
-              {searchQuery && (
-                <span className={styles.matchCount}>
-                  {filteredData.reduce((total, row) => {
-                    return (
-                      total +
-                      Object.values(row).reduce((count: number, value) => {
-                        return (
-                          count +
-                          (String(value)
-                            .toLowerCase()
-                            .includes(searchQuery.toLowerCase())
-                            ? 1
-                            : 0)
-                        );
-                      }, 0)
-                    );
-                  }, 0)}{' '}
-                  совпадений
-                </span>
-              )}
+              <div className={styles.matchCountWrapper}>
+                {searchQuery && (
+                  <span className={styles.matchCount}>
+                    {filteredData.reduce((total, row) => {
+                      return (
+                        total +
+                        Object.values(row).reduce((count: number, value) => {
+                          return (
+                            count +
+                            (String(value)
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase())
+                              ? 1
+                              : 0)
+                          );
+                        }, 0)
+                      );
+                    }, 0)}{' '}
+                    совпадений
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className={styles.actions}>
