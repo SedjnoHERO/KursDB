@@ -194,8 +194,10 @@ border-radius: 8px;
 tbody tr {
   transition: all 0.2s;
 
-  &:hover td {
-    background-color: #e0e0e0;
+  @media (hover: hover) {
+    &:hover td {
+      background-color: #e0e0e0;
+    }
   }
 
   &.highlightedRow td {
@@ -203,8 +205,10 @@ tbody tr {
   }
 
   // При наведении на выделенную строку
-  &.highlightedRow:hover td {
-    background-color: #e0e0e0;
+  @media (hover: hover) {
+    &.highlightedRow:hover td {
+      background-color: #e0e0e0;
+    }
   }
 
         &:last-child td {
@@ -217,9 +221,10 @@ tbody tr {
         display: flex;
         gap: 8px;
       }
-
-      tr:hover .actions {
-        opacity: 1;
+      @media (hover: hover) {
+        tr:hover .actions {
+          opacity: 1;
+        }
       }
     }
   }

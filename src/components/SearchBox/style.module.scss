@@ -39,9 +39,11 @@
   box-sizing: border-box;
   width: 100%;
 
+  @media (hover: hover) {
   &:hover {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
   }
+}
 
   &:focus-within {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -139,8 +141,10 @@
     font-weight: 400 !important;
     background: white !important;
     
-    &:hover {
-      background: #f8fafc !important;
+    @media (hover: hover) {
+      &:hover {
+        background: #f8fafc !important;
+      }
     }
     
     &--is-focused {
@@ -175,8 +179,10 @@
   font-size: 1rem;
   transition: all 0.2s ease;
 
-  &:hover {
-    opacity: 0.95;
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.95;
+    }
   }
 
   &:active {

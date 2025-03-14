@@ -25,9 +25,11 @@
     background: linear-gradient(90deg, #2563eb, #1d4ed8);
   }
 
-  &:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
+    }
   }
 
   @media (max-width: 932px) {
@@ -40,9 +42,11 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     background: linear-gradient(to bottom right, #ffffff, #f8fafc);
 
-    &:hover {
-      transform: none;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    @media (hover: hover) {
+      &:hover {
+        transform: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
     }
 
     &::before {

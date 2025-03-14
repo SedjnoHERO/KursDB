@@ -51,9 +51,11 @@
         font-weight: 500;
         white-space: nowrap;
 
-        &:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
+        @media (hover: hover) { 
+          &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+          }
         }
 
         &.active {
@@ -69,9 +71,11 @@
       transition: opacity 0.2s;
       margin-left: 24px;
       cursor: pointer;
-
-      &:hover {
-        opacity: 1;
+      
+      @media (hover: hover) {
+        &:hover {
+          opacity: 1;
+        }
       }
     }
   }

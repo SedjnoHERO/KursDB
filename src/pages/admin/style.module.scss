@@ -31,13 +31,14 @@
     cursor: pointer;
     box-shadow: var(--shadow-sm);
 
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: var(--primary-light);
-      background-color: var(--primary);
-      color: var(--background-secondary);
-
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary-light);
+        background-color: var(--primary);
+        color: var(--background-secondary);
+      }
       .icon {
         color: var(--background-secondary);
       }
@@ -69,7 +70,9 @@
     border-radius: map-get($spacing, l);
 
 
-    &:hover {
+    @media (hover: hover) {
+      &:hover {
         background-color: var(--primary);    
-    }   
+      }   
+    }
 }

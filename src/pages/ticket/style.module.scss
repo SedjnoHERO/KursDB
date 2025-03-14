@@ -210,8 +210,10 @@
   cursor: pointer;
   transition: background-color 0.2s;
 
-  &:hover {
-    background: #0056b3;
+  @media (hover: hover) {
+    &:hover {
+      background: #0056b3;
+    }
   }
 }
 

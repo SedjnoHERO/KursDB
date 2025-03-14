@@ -177,8 +177,10 @@
         margin-bottom: 1rem;
         transition: color 0.3s ease;
 
-        &:hover {
-          color: white;
+        @media (hover: hover) {
+          &:hover {
+            color: white;
+          }
         }
       }
 
@@ -219,8 +221,10 @@
           transition: all 0.2s;
           white-space: nowrap;
 
-          &:hover {
-            background: #1d4ed8;
+          @media (hover: hover) {
+            &:hover {
+              background: #1d4ed8;
+            }
           }
         }
       }

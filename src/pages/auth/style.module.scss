@@ -35,8 +35,10 @@
   transform: translateY(0);
   transition: transform 0.3s ease;
 
-  &:hover {
-    transform: translateY(-5px);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-5px);
+    }
   }
 }
 
@@ -65,10 +67,16 @@
     color: #2563eb;
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
   }
+  @media (hover: hover) {
+    &:hover {
+      color: #2563eb;
+    }
+  
 
   &:hover:not(.active) {
     color: #2563eb;
   }
+}
 }
 
 .form {
@@ -126,9 +134,11 @@
     border-radius: 6px;
     transition: all 0.3s ease;
 
-    &:hover {
-      color: #2563eb;
-      background: rgba(37, 99, 235, 0.1);
+    @media (hover: hover) {
+      &:hover {
+        color: #2563eb;
+        background: rgba(37, 99, 235, 0.1);
+      }
     }
   }
 }
@@ -148,8 +158,10 @@
   position: relative;
   overflow: hidden;
 
-  &:hover {
-    background: color-mix(in srgb, #2563eb 90%, black);
+  @media (hover: hover) {
+    &:hover {
+      background: color-mix(in srgb, #2563eb 90%, black);
+    }
   }
 
   &:active {

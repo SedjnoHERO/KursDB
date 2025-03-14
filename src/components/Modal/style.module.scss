@@ -75,8 +75,10 @@
   padding: 0;
   color: #666;
   
-  &:hover {
-    color: #000;
+  @media (hover: hover) {
+    &:hover {
+      color: #000;
+    }
   }
 }
 
