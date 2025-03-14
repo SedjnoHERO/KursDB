@@ -1,0 +1,211 @@
+.searchBox {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    position: static;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    margin: 0;
+    width: 100%;
+    border-radius: 1.25rem;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.searchGroup {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
+
+  svg {
+    color: #94a3b8;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    background: #f8fafc;
+    border: none;
+    padding: 0.875rem;
+    border-radius: 0.875rem;
+    
+    svg {
+      font-size: 1.125rem;
+      color: #64748b;
+    }
+  }
+}
+
+:global {
+  .select__control {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    min-height: 38px !important;
+    width: 100%;
+    cursor: pointer !important;
+    padding: 0 !important;
+  }
+
+  .select__value-container {
+    padding: 0 !important;
+  }
+
+  .select__input {
+    color: #1e293b !important;
+  }
+
+  .select__single-value {
+    color: #1e293b !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+  }
+
+  .select__placeholder {
+    color: #94a3b8 !important;
+    margin: 0 !important;
+  }
+
+  .select__indicators {
+    padding: 0 !important;
+  }
+
+  .select__menu {
+    margin-top: 8px !important;
+    border-radius: 1rem !important;
+    overflow: hidden !important;
+    border: none !important;
+    background: white !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+
+    @media (max-width: 768px) {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: calc(100% - 2rem) !important;
+      max-height: 60vh !important;
+      margin: 0 !important;
+      border-radius: 1rem !important;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+
+      &::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+      }
+    }
+  }
+
+  .select__option {
+    padding: 0.875rem 1rem !important;
+    cursor: pointer !important;
+    color: #1e293b !important;
+    font-weight: 400 !important;
+    background: white !important;
+    
+    &:hover {
+      background: #f8fafc !important;
+    }
+    
+    &--is-focused {
+      background: #f1f5f9 !important;
+    }
+    
+    &--is-selected {
+      background: #2563eb !important;
+      color: white !important;
+    }
+
+    @media (max-width: 768px) {
+      padding: 1rem !important;
+      border-bottom: 1px solid #f1f5f9;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+.searchButton {
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  color: white;
+  border: none;
+  border-radius: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 0.95;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+
+  @media (max-width: 768px) {
+    margin-top: 0.5rem;
+    padding: 0.875rem;
+  }
+}
+
+.input {
+  flex: 1;
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  .searchBox {
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  .searchGroup {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+
+  .searchButton {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.95rem;
+  }
+} 

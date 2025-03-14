@@ -1,0 +1,38 @@
+.popular {
+  padding: 40px 20px;
+  background: #f8fafc;
+
+  .title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    justify-content: center;
+  }
+
+  .flightCard {
+    flex: 0 1 calc(33.333% - 1.334rem);
+    min-width: 300px;
+  }
+
+  @media (max-width: 1024px) {
+    .flightCard {
+      flex: 0 1 calc(50% - 1rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .flightCard {
+      flex: 0 1 100%;
+    }
+  }
+} 

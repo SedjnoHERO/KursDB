@@ -9,6 +9,7 @@ export type EntityType = 'AIRPORT' | 'AIRPLANE' | 'AIRLINE' | 'FLIGHT' | 'TICKET
 // }
 
 interface Airport {
+  AirportID: number;
   Name: string;
   City: string;
   Country: string;
@@ -27,12 +28,14 @@ interface Airplane {
 }
 
 interface Flight {
+  FlightID: number;
   FlightNumber: string;
   AirplaneID: number;
   DepartureAirportID: number;
   ArrivalAirportID: number;
   DepartureTime: string;
   ArrivalTime: string;
+  Price: number;
 }
 
 interface Passenger {

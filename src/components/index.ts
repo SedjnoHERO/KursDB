@@ -6,3 +6,6 @@ export { Skeleton } from './Skeleton';
 export { Header } from './Header';
 export { RangeSelector } from './RangeSelector';
 export { Selector } from './Selector';
+export { ServiceCard } from './ServiceCard';
+export { FlightCard } from './FlightCard';
+export { SearchBox } from './SearchBox'

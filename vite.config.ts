@@ -4,6 +4,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'path'
 
 export default defineConfig({
   plugins: [
@@ -16,18 +17,24 @@ export default defineConfig({
       },
       includeAssets: [
         'assets/images/**/*',
-        'assets/icons/**/*'
+        'assets/icons/**/*',
+        'airplane.svg',
+        'favicon.ico'
       ],
       manifest: {
-        name: 'AirService - Авиакомпания',
-        short_name: 'AirService',
-        description: 'Система управления авиакомпанией',
+        name: 'Flight Booking',
+        short_name: 'Flights',
         theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
-        orientation: 'portrait',
+        scope: '/',
         start_url: '/',
         icons: [
+          {
+            src: '/assets/icons/144x144.png',
+            sizes: '144x144',
+            type: 'image/png'
+          },
           {
             src: '/assets/icons/192x192.png',
             sizes: '192x192',
@@ -69,6 +76,17 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 год
               }
             }
+          },
+          {
+            urlPattern: /^https:\/\/api\./i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       }
@@ -76,14 +94,19 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@assets': '/src/assets', 
-      '@components': '/src/components',
-      '@modules': '/src/modules',
-      '@pages': '/src/pages',
-      '@theme': '/src/theme',
-      '@api': '/src/api', 
-      '@hooks': '/src/hooks',
-      '@config': '/src/config'
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@modules': path.resolve(__dirname, './src/modules'),
+      '@theme': path.resolve(__dirname, './src/theme'), 
+      '@pages': path.resolve(__dirname, './src/pages'),
+      // '@assets': path.resolve(__dirname, './src/assets'),
+      '@config': path.resolve(__dirname, './src/config'),
+      '@styles': path.resolve(__dirname, './src/styles'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      // '@utils': path.resolve(__dirname, './src/utils'),
+      // '@store': path.resolve(__dirname, './src/store'),
+      '@api': path.resolve(__dirname, './src/api'),
+      // '@types': path.resolve(__dirname, './src/types'),
     }
   }
 })
