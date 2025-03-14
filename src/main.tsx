@@ -11,6 +11,7 @@ import {
   Outlet,
 } from 'react-router-dom';
 import './registerSW';
+import '@styles/global.scss';
 
 const App = () => {
   const isOnline = useInternet();
