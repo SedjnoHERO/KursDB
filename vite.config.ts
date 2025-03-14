@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.svg'],
       manifest: {
         name: 'AeroTickets',
@@ -40,18 +40,34 @@ export default defineConfig({
               networkTimeoutSeconds: 5,
               cacheableResponse: {
                 statuses: [0, 200]
+              },
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 // 1 час
+              }
+            }
+          },
+          {
+            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 7 * 24 * 60 * 60 // 7 дней
               }
             }
           }
         ],
-        cleanupOutdatedCaches: true
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+        sourcemap: true
       },
       devOptions: {
         enabled: true,
-        type: 'module',
-        navigateFallback: 'index.html'
-      },
-      strategies: 'generateSW'
+        type: 'module'
+      }
     })
   ],
   resolve: {
