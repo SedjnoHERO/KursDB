@@ -102,7 +102,7 @@ const DefaultHeader = () => {
       <div className={styles.contentContainer}>
         <a href="/" className={styles.logo}>
           <FaPlane />
-          AirTravel
+          AeroControl
         </a>
         <button
           className={styles.mobileMenuButton}

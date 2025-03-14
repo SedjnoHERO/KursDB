@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.svg'],
       manifest: {
-        name: 'AeroTickets',
-        short_name: 'AeroTickets',
+        name: 'AeroControl',
+        short_name: 'AeroControl',
         description: 'Система бронирования авиабилетов',
         theme_color: '#ffffff',
         start_url: '/',
