@@ -23,76 +23,71 @@
   padding: 0;
   position: relative;
   overflow: hidden;
+
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 6rem 1rem;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+      url('/images/hero-bg.jpg') no-repeat center center;
+    background-size: cover;
+    color: white;
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 4rem);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    p {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      margin-bottom: 3rem;
+      max-width: 600px;
+      line-height: 1.6;
+    }
+  }
 }
 
 .contentContainer {
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 0 auto;
-  width: 100%;
-  padding: 0 1.5rem;
-  box-sizing: border-box;
+  padding: 0 1rem;
 }
 
-.header {
-  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
-              url('/assets/images/hero-bg.jpg') center/cover;
-  min-height: 100vh;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.hero {
-  width: 100%;
-  text-align: center;
-  padding: 2rem 0;
-
-  h1 {
-    font-size: clamp(2rem, 5vw, 4rem);
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    color: white;
-  }
-
-  p {
-    font-size: clamp(1.1rem, 2vw, 1.5rem);
-    max-width: 700px;
-    margin: 0 auto 3rem;
-    line-height: 1.6;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    color: white;
-  }
-}
-
-.services, .destinations, .about {
+.services {
   padding: 6rem 0;
-  background: white;
+  background: #f8fafc;
 
   h2 {
     text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
     margin-bottom: 4rem;
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 800;
     color: #1e293b;
   }
 }
 
 .serviceCards {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2.5rem;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
 .destinations {
-  background: #f8fafc;
-  
-  @media (max-width: 932px) {
-    .contentContainer {
-      padding: 0;
-    }
+  padding: 6rem 0;
+  background: white;
+
+  h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    margin-bottom: 4rem;
+    color: #1e293b;
   }
 }
 
@@ -100,9 +95,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
-  justify-items: center;
-  width: 100%;
-  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
 
   @media (max-width: 932px) {
     grid-template-columns: 1fr;
@@ -118,10 +113,19 @@
 }
 
 .about {
+  padding: 6rem 0;
+  background: #f8fafc;
+
   .aboutContent {
     text-align: center;
     max-width: 800px;
     margin: 0 auto;
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      margin-bottom: 2rem;
+      color: #1e293b;
+    }
 
     p {
       font-size: 1.1rem;

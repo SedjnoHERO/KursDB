@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaMoneyBillWave, FaShieldAlt, FaHeadset } from 'react-icons/fa';
 import { TableAPI } from '@api';
 import { Skeleton, ServiceCard, FlightCard, SearchBox } from '@components';
-import { Header } from '@modules';
+import { Layout } from '@modules';
 
 import styles from './style.module.scss';
 
@@ -292,119 +292,86 @@ export const Home = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <Header type="default" />
-        <div className={styles.contentContainer}>
-          <div className={styles.hero}>
-            <h1>Найдите идеальный рейс</h1>
-            <p>Путешествуйте с комфортом в любую точку мира</p>
-
-            <SearchBox onSearch={handleSearch} airports={airports} />
-          </div>
+    <Layout headerType="default">
+      <div className={styles.container}>
+        <div className={styles.hero}>
+          <h1>Найдите идеальный рейс</h1>
+          <p>Путешествуйте с комфортом в любую точку мира</p>
+          <SearchBox onSearch={handleSearch} airports={airports} />
         </div>
-      </header>
 
-      <section id="services" className={styles.services}>
-        <div className={styles.contentContainer}>
-          <h2>Наши услуги</h2>
-          <div className={styles.serviceCards}>
-            {services.map((service, index) => (
-              <ServiceCard key={index} {...service} />
-            ))}
+        <section id="services" className={styles.services}>
+          <div className={styles.contentContainer}>
+            <h2>Наши услуги</h2>
+            <div className={styles.serviceCards}>
+              {services.map((service, index) => (
+                <ServiceCard key={index} {...service} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="destinations" className={styles.destinations}>
-        <div className={styles.contentContainer}>
-          <h2>Популярные направления</h2>
-          <div className={styles.flightGrid}>
-            {loading
-              ? Array(6)
-                  .fill(null)
-                  .map((_, index) => <Skeleton key={index} type="flight" />)
-              : popularFlights.map(flight => (
-                  <FlightCard
-                    key={flight.id}
-                    flight={{
-                      id: flight.id,
-                      FlightID: flight.FlightNumber,
-                      DepartureCity: flight.departureAirport?.City || '',
-                      ArrivalCity: flight.arrivalAirport?.City || '',
-                      DepartureAirport: flight.departureAirport?.Name || '',
-                      ArrivalAirport: flight.arrivalAirport?.Name || '',
-                      DepartureDate: flight.DepartureTime,
-                      Duration:
-                        Math.abs(
-                          (new Date(flight.ArrivalTime).getTime() -
-                            new Date(flight.DepartureTime).getTime()) /
-                            (1000 * 60),
-                        ) + ' мин',
-                      Price: flight.Price,
-                      AvailableSeats: flight.AvailableSeats,
-                    }}
-                  />
-                ))}
+        <section id="destinations" className={styles.destinations}>
+          <div className={styles.contentContainer}>
+            <h2>Популярные направления</h2>
+            <div className={styles.flightGrid}>
+              {loading
+                ? Array(6)
+                    .fill(null)
+                    .map((_, index) => <Skeleton key={index} type="flight" />)
+                : popularFlights.map(flight => (
+                    <FlightCard
+                      key={flight.id}
+                      flight={{
+                        id: flight.id,
+                        FlightID: flight.FlightNumber,
+                        DepartureCity: flight.departureAirport?.City || '',
+                        ArrivalCity: flight.arrivalAirport?.City || '',
+                        DepartureAirport: flight.departureAirport?.Name || '',
+                        ArrivalAirport: flight.arrivalAirport?.Name || '',
+                        DepartureDate: flight.DepartureTime,
+                        Duration:
+                          Math.abs(
+                            (new Date(flight.ArrivalTime).getTime() -
+                              new Date(flight.DepartureTime).getTime()) /
+                              (1000 * 60),
+                          ) + ' мин',
+                        Price: flight.Price,
+                        AvailableSeats: flight.AvailableSeats,
+                      }}
+                    />
+                  ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="about" className={styles.about}>
-        <div className={styles.contentContainer}>
-          <div className={styles.aboutContent}>
-            <h2>О нашей компании</h2>
-            <p>
-              Мы - ведущая авиакомпания, предоставляющая высококачественные
-              услуги по авиаперевозкам. Наша цель - сделать путешествия
-              доступными и комфортными для каждого пассажира.
-            </p>
-            <div className={styles.stats}>
-              <div className={styles.stat}>
-                <h3>100+</h3>
-                <p>Направлений</p>
-              </div>
-              <div className={styles.stat}>
-                <h3>1M+</h3>
-                <p>Довольных клиентов</p>
-              </div>
-              <div className={styles.stat}>
-                <h3>24/7</h3>
-                <p>Поддержка</p>
+        <section id="about" className={styles.about}>
+          <div className={styles.contentContainer}>
+            <div className={styles.aboutContent}>
+              <h2>О нашей компании</h2>
+              <p>
+                Мы - ведущая авиакомпания, предоставляющая высококачественные
+                услуги по авиаперевозкам. Наша цель - сделать путешествия
+                доступными и комфортными для каждого пассажира.
+              </p>
+              <div className={styles.stats}>
+                <div className={styles.stat}>
+                  <h3>100+</h3>
+                  <p>Направлений</p>
+                </div>
+                <div className={styles.stat}>
+                  <h3>1M+</h3>
+                  <p>Довольных клиентов</p>
+                </div>
+                <div className={styles.stat}>
+                  <h3>24/7</h3>
+                  <p>Поддержка</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <footer className={styles.footer}>
-        <div className={styles.contentContainer}>
-          <div className={styles.footerContent}>
-            <div className={styles.footerSection}>
-              <h3>Контакты</h3>
-              <a href="tel:+78001234567">8 (800) 123-45-67</a>
-              <a href="mailto:support@airtravel.com">support@airtravel.com</a>
-            </div>
-            <div className={styles.footerSection}>
-              <h3>Информация</h3>
-              <a href="/about">О компании</a>
-              <a href="/terms">Условия</a>
-              <a href="/privacy">Конфиденциальность</a>
-            </div>
-            <div className={styles.footerSection}>
-              <h3>Подписка на новости</h3>
-              <p>Получайте специальные предложения и новости компании</p>
-              <div className={styles.subscribe}>
-                <input type="email" placeholder="Ваш email" />
-                <button>Подписаться</button>
-              </div>
-            </div>
-          </div>
-          <div className={styles.copyright}>
-            © 2024 AirTravel. Все права защищены.
-          </div>
-        </div>
-      </footer>
-    </div>
+        </section>
+      </div>
+    </Layout>
   );
 };
