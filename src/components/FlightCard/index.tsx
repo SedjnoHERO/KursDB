@@ -43,12 +43,13 @@ export const FlightCard = ({ flight }: FlightCardProps) => {
     }).format(price);
   };
 
-  const handleClick = () => {
-    navigate(`/flights/${flight.id}`);
+  const handleBooking = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/ticket/${flight.id}`);
   };
 
   return (
-    <div className={styles.flightCard} onClick={handleClick}>
+    <div className={styles.flightCard}>
       <div className={styles.cities}>
         <span className={styles.city}>{flight.DepartureCity}</span>
         <FaArrowRight className={styles.arrow} />
@@ -74,7 +75,9 @@ export const FlightCard = ({ flight }: FlightCardProps) => {
         </div>
       </div>
 
-      <button className={styles.bookButton}>Забронировать</button>
+      <button className={styles.bookButton} onClick={handleBooking}>
+        Забронировать
+      </button>
     </div>
   );
 };

@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  FaPlane,
-  FaMoneyBillWave,
-  FaShieldAlt,
-  FaHeadset,
-  FaBars,
-  FaTimes,
-} from 'react-icons/fa';
-import { TableAPI } from '../../api';
+import { FaMoneyBillWave, FaShieldAlt, FaHeadset } from 'react-icons/fa';
+import { TableAPI } from '@api';
 import { Skeleton, ServiceCard, FlightCard, SearchBox } from '@components';
+import { Header } from '@modules';
 
 import styles from './style.module.scss';
 
@@ -300,44 +294,7 @@ export const Home = () => {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <nav className={`${styles.nav} ${isScrolled ? styles.scrolled : ''}`}>
-          <div className={styles.contentContainer}>
-            <a href="/" className={styles.logo}>
-              <FaPlane />
-              AirTravel
-            </a>
-            <button
-              className={styles.mobileMenuButton}
-              onClick={toggleMobileMenu}
-              aria-label="Меню"
-            >
-              {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-            </button>
-            <div
-              className={`${styles.navLinks} ${isMobileMenuOpen ? styles.open : ''}`}
-            >
-              <a href="#services" onClick={scrollToSection('services')}>
-                Услуги
-              </a>
-              <a href="#destinations" onClick={scrollToSection('destinations')}>
-                Направления
-              </a>
-              <a href="#about" onClick={scrollToSection('about')}>
-                О нас
-              </a>
-              <button
-                className={styles.authButton}
-                onClick={() => {
-                  closeMobileMenu();
-                  navigate('/auth');
-                }}
-              >
-                Войти
-              </button>
-            </div>
-          </div>
-        </nav>
-
+        <Header type="default" />
         <div className={styles.contentContainer}>
           <div className={styles.hero}>
             <h1>Найдите идеальный рейс</h1>

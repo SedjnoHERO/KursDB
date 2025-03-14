@@ -11,85 +11,63 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      devOptions: {
-        enabled: true,
-        navigateFallback: 'index.html'
-      },
-      includeAssets: [
-        'assets/images/**/*',
-        'assets/icons/**/*',
-        'airplane.svg',
-        'favicon.ico'
-      ],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Flight Booking',
-        short_name: 'Flights',
-        theme_color: '#2563eb',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
+        name: 'AeroTickets',
+        short_name: 'AeroTickets',
+        description: 'Система бронирования авиабилетов',
+        theme_color: '#ffffff',
         start_url: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
         icons: [
           {
-            src: '/assets/icons/144x144.png',
-            sizes: '144x144',
+            src: 'pwa-64x64.png',
+            sizes: '64x64',
             type: 'image/png'
           },
           {
-            src: '/assets/icons/192x192.png',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/assets/icons/512x512.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'  
+          },
+          {
+            src: 'maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
-        navigateFallback: 'index.html',
-        navigateFallbackAllowlist: [/^(?!\/__).*/],
-        skipWaiting: true,
-        clientsClaim: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 год
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 год
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/api\./i,
+            urlPattern: /^https:\/\/api\.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
+              networkTimeoutSeconds: 5,
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
           }
-        ]
-      }
+        ],
+        cleanupOutdatedCaches: true
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html'
+      },
+      strategies: 'generateSW'
     })
   ],
   resolve: {
@@ -99,14 +77,12 @@ export default defineConfig({
       '@modules': path.resolve(__dirname, './src/modules'),
       '@theme': path.resolve(__dirname, './src/theme'), 
       '@pages': path.resolve(__dirname, './src/pages'),
-      // '@assets': path.resolve(__dirname, './src/assets'),
+      '@assets': path.resolve(__dirname, './src/assets'),
       '@config': path.resolve(__dirname, './src/config'),
       '@styles': path.resolve(__dirname, './src/styles'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
-      // '@utils': path.resolve(__dirname, './src/utils'),
-      // '@store': path.resolve(__dirname, './src/store'),
+      '@utils': path.resolve(__dirname, './src/utils'),
       '@api': path.resolve(__dirname, './src/api'),
-      // '@types': path.resolve(__dirname, './src/types'),
     }
   }
 })

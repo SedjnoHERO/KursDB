@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Header } from '@components';
+import { Header } from '@modules';
 import { EntityType } from '@api';
 import styles from './style.module.scss';
 import { TableComponent } from '@modules';
@@ -11,7 +11,7 @@ export const AdminPage = () => {
   return (
     <div className={styles.container}>
       <Toaster theme="dark" />
-      <Header activeType={type} onTypeChange={setType} />
+      <Header type="admin" activeType={type} onTypeChange={setType} />
       <main className={styles.content}>
         <TableComponent type={type} />
       </main>
