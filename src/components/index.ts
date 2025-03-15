@@ -10,3 +10,4 @@ export { ServiceCard } from './ServiceCard';
 export { FlightCard } from './FlightCard';
 export { SearchBox } from './SearchBox';
 export { Footer } from './Footer';
+export { Popular } from './Popular';

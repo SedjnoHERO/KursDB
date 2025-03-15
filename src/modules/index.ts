@@ -1,3 +1,3 @@
 export * from './Table';
-export * from './Header';
+export * from '../components/Header';
 export * from './Layout';

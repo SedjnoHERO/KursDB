@@ -1,0 +1,220 @@
+.profilePage {
+  padding: 2rem 0;
+  min-height: calc(100vh - 64px);
+  background-color: #f8fafc;
+
+  .contentContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .profileSection {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+
+      h1 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.5rem;
+        color: #1e293b;
+
+        svg {
+          color: #3b82f6;
+        }
+      }
+
+      .editButton {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        background: #3b82f6;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background: #2563eb;
+        }
+
+        svg {
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    .profileInfo {
+      .infoGrid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+
+        @media (max-width: 640px) {
+          grid-template-columns: 1fr;
+        }
+
+        .infoGroup {
+          label {
+            display: block;
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+          }
+
+          input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+
+            &:focus {
+              outline: none;
+              border-color: #3b82f6;
+            }
+          }
+
+          p {
+            padding: 0.75rem;
+            color: #1e293b;
+            background: #f8fafc;
+            border-radius: 6px;
+          }
+        }
+      }
+    }
+  }
+
+  .ticketsSection {
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
+      color: #1e293b;
+      margin-bottom: 1.5rem;
+
+      svg {
+        color: #3b82f6;
+      }
+    }
+
+    .ticketsList {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .ticketCard {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+
+        .ticketInfo {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 1rem;
+
+          .route {
+            h3 {
+              font-size: 1.125rem;
+              color: #1e293b;
+              margin-bottom: 0.25rem;
+            }
+
+            p {
+              color: #64748b;
+              font-size: 0.875rem;
+            }
+          }
+
+          .price {
+            text-align: right;
+
+            p {
+              font-size: 1.25rem;
+              font-weight: 600;
+              color: #1e293b;
+              margin-bottom: 0.25rem;
+            }
+
+            span {
+              display: inline-block;
+              padding: 0.25rem 0.75rem;
+              border-radius: 9999px;
+              font-size: 0.75rem;
+              font-weight: 500;
+
+              &.booked {
+                background: #fef3c7;
+                color: #92400e;
+              }
+
+              &.paid {
+                background: #dcfce7;
+                color: #166534;
+              }
+
+              &.cancelled {
+                background: #fee2e2;
+                color: #991b1b;
+              }
+            }
+          }
+        }
+
+        .ticketActions {
+          display: flex;
+          gap: 1rem;
+
+          button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+
+            &.payButton {
+              background: #3b82f6;
+              color: white;
+
+              &:hover {
+                background: #2563eb;
+              }
+            }
+
+            &.cancelButton {
+              background: #ef4444;
+              color: white;
+
+              &:hover {
+                background: #dc2626;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+} 

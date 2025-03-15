@@ -1,6 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ErrorPage, Home, Auth, AdminPage, TicketDetail } from '@pages';
+import {
+  ErrorPage,
+  Home,
+  Auth,
+  AdminPage,
+  TicketDetail,
+  Profile,
+  Catalog,
+} from '@pages';
 import { useInternet } from '@hooks';
 import {
   createBrowserRouter,
@@ -30,6 +38,8 @@ const router = createBrowserRouter(
       <Route path="/auth" element={<Auth />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/error" element={<ErrorPage />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/catalog" element={<Catalog />} />
       <Route path="/ticket/:id" element={<TicketDetail />} />
       <Route path="*" element={<Navigate to="/error" replace />} />
     </Route>,

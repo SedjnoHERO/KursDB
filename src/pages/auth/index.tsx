@@ -1,166 +1,167 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@components';
-import { FaEnvelope, FaLock, FaUser } from 'react-icons/fa';
+import { Layout } from '@modules';
+import { FaEnvelope, FaUser, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
 
-type AuthType = 'login' | 'register';
+interface UserData {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+}
 
 export const Auth = () => {
-  const [authType, setAuthType] = useState<AuthType>('login');
-  const [formData, setFormData] = useState({
+  const [step, setStep] = useState<'email' | 'registration'>('email');
+  const [userData, setUserData] = useState<UserData>({
     email: '',
-    password: '',
-    confirmPassword: '',
     firstName: '',
     lastName: '',
+    phone: '',
+    address: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (authType === 'register') {
-      if (formData.password !== formData.confirmPassword) {
-        toast.error('Пароли не совпадают');
-        return;
-      }
-
-      if (formData.password.length < 6) {
-        toast.error('Пароль должен быть не менее 6 символов');
-        return;
-      }
-
-      if (
-        !/^[A-Za-zА-Яа-яЁё\s-]+$/.test(formData.firstName) ||
-        !/^[A-Za-zА-Яа-яЁё\s-]+$/.test(formData.lastName)
-      ) {
-        toast.error('Имя и фамилия должны содержать только буквы');
-        return;
-      }
-    }
-
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    if (!/\S+@\S+\.\S+/.test(userData.email)) {
       toast.error('Некорректный email');
       return;
     }
 
     try {
-      // Здесь будет логика аутентификации
-      toast.success(
-        authType === 'login' ? 'Вход выполнен' : 'Регистрация успешна',
-      );
-      navigate('/');
+      // Здесь будет проверка существования email в API
+      const isExistingUser = false; // Временно для демонстрации
+
+      if (isExistingUser) {
+        // Если пользователь существует - сразу в профиль
+        navigate('/profile');
+      } else {
+        // Если новый пользователь - на форму регистрации
+        setStep('registration');
+      }
     } catch (error) {
-      toast.error('Произошла ошибка');
+      toast.error('Произошла ошибка при проверке email');
+    }
+  };
+
+  const handleRegistrationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!userData.firstName || !userData.lastName) {
+      toast.error('Заполните имя и фамилию');
+      return;
+    }
+
+    if (!userData.phone) {
+      toast.error('Укажите номер телефона');
+      return;
+    }
+
+    try {
+      // Здесь будет отправка данных в API
+      console.log('Регистрация:', userData);
+      toast.success('Регистрация успешна');
+      navigate('/profile');
+    } catch (error) {
+      toast.error('Произошла ошибка при регистрации');
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setUserData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formWrapper}>
-        <div className={styles.toggleButtons}>
-          <button
-            className={`${styles.toggleButton} ${authType === 'login' ? styles.active : ''}`}
-            onClick={() => setAuthType('login')}
-          >
-            Вход
-          </button>
-          <button
-            className={`${styles.toggleButton} ${authType === 'register' ? styles.active : ''}`}
-            onClick={() => setAuthType('register')}
-          >
-            Регистрация
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {authType === 'register' && (
+    <Layout>
+      <div className={styles.authPage}>
+        <div className={styles.formContainer}>
+          {step === 'email' ? (
             <>
-              <div className={styles.inputGroup}>
-                <FaUser className={styles.icon} />
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="Имя"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <FaUser className={styles.icon} />
-                <input
-                  type="text"
-                  name="lastName"
-                  placeholder="Фамилия"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+              <h1>Вход в систему</h1>
+              <p className={styles.subtitle}>
+                Введите ваш email для входа или регистрации
+              </p>
+              <form onSubmit={handleEmailSubmit}>
+                <div className={styles.inputGroup}>
+                  <FaEnvelope className={styles.icon} />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Ваш email"
+                    value={userData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <button type="submit" className={styles.submitButton}>
+                  Продолжить
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h1>Регистрация</h1>
+              <p className={styles.subtitle}>
+                Заполните данные для создания аккаунта
+              </p>
+              <form onSubmit={handleRegistrationSubmit}>
+                <div className={styles.inputGroup}>
+                  <FaUser className={styles.icon} />
+                  <input
+                    type="text"
+                    name="firstName"
+                    placeholder="Имя"
+                    value={userData.firstName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <FaUser className={styles.icon} />
+                  <input
+                    type="text"
+                    name="lastName"
+                    placeholder="Фамилия"
+                    value={userData.lastName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <FaPhone className={styles.icon} />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Телефон"
+                    value={userData.phone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <FaMapMarkerAlt className={styles.icon} />
+                  <input
+                    type="text"
+                    name="address"
+                    placeholder="Адрес"
+                    value={userData.address}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <button type="submit" className={styles.submitButton}>
+                  Зарегистрироваться
+                </button>
+              </form>
             </>
           )}
-
-          <div className={styles.inputGroup}>
-            <FaEnvelope className={styles.icon} />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-
-          <div className={styles.inputGroup}>
-            <FaLock className={styles.icon} />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              placeholder="Пароль"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-            />
-            <button
-              type="button"
-              className={styles.showPassword}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? 'Скрыть' : 'Показать'}
-            </button>
-          </div>
-
-          {authType === 'register' && (
-            <div className={styles.inputGroup}>
-              <FaLock className={styles.icon} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                placeholder="Подтвердите пароль"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          )}
-
-          <Button
-            variant="primary"
-            label={authType === 'login' ? 'Войти' : 'Зарегистрироваться'}
-            className={styles.submitButton}
-          />
-        </form>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };

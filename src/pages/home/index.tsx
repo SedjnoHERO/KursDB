@@ -1,61 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FaMoneyBillWave, FaShieldAlt, FaHeadset } from 'react-icons/fa';
 import { TableAPI } from '@api';
-import { Skeleton, ServiceCard, FlightCard, SearchBox } from '@components';
+import { ServiceCard, SearchBox, Popular } from '@components';
 import { Layout } from '@modules';
 
 import styles from './style.module.scss';
-
-interface Airport {
-  id: number;
-  City: string;
-  Country: string;
-  Name: string;
-}
-
-interface Flight {
-  id: number;
-  FlightNumber: string;
-  DepartureAirportId: number;
-  ArrivalAirportId: number;
-  DepartureTime: string;
-  ArrivalTime: string;
-  Price: number;
-  AvailableSeats: number;
-  departureAirport?: Airport;
-  arrivalAirport?: Airport;
-}
-
-interface RawAirport {
-  AirportID: number;
-  Name: string;
-  City: string;
-  Country: string;
-  Code: string;
-}
-
-interface RawFlight {
-  FlightID: number;
-  FlightNumber: string;
-  AirplaneID: number;
-  DepartureAirportID: number;
-  ArrivalAirportID: number;
-  DepartureTime: string;
-  ArrivalTime: string;
-}
-
-interface RawTicket {
-  TicketID: number;
-  FlightID: number;
-  PassengerID: number | null;
-  Price: number;
-}
-
-interface RawAirplane {
-  AirplaneID: number;
-  Capacity: number;
-}
 
 interface Option {
   value: string;
@@ -81,10 +30,7 @@ const services = [
 ];
 
 export const Home = () => {
-  const navigate = useNavigate();
-  const [popularFlights, setPopularFlights] = useState<Flight[]>([]);
   const [airports, setAirports] = useState<Option[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchParams, setSearchParams] = useState({
@@ -117,36 +63,15 @@ export const Home = () => {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAirports = async () => {
       try {
-        setLoading(true);
+        const airportsResponse = await TableAPI.fetchData('AIRPORT');
 
-        const [
-          flightsResponse,
-          airportsResponse,
-          ticketsResponse,
-          airplanesResponse,
-        ] = await Promise.all([
-          TableAPI.fetchData('FLIGHT'),
-          TableAPI.fetchData('AIRPORT'),
-          TableAPI.fetchData('TICKET'),
-          TableAPI.fetchData('AIRPLANE'),
-        ]);
-
-        if (
-          !Array.isArray(flightsResponse) ||
-          !Array.isArray(airportsResponse) ||
-          !Array.isArray(ticketsResponse) ||
-          !Array.isArray(airplanesResponse)
-        ) {
+        if (!Array.isArray(airportsResponse)) {
           throw new Error('Неверный формат ответа от API');
         }
 
-        const rawTickets = ticketsResponse as unknown as RawTicket[];
-        const rawAirplanes = airplanesResponse as unknown as RawAirplane[];
-        const rawAirports = airportsResponse as unknown as RawAirport[];
-
-        const formattedAirports = rawAirports
+        const formattedAirports = airportsResponse
           .filter(airport => {
             const isValid =
               airport &&
@@ -155,107 +80,20 @@ export const Home = () => {
               airport.City.length > 0;
             return isValid;
           })
-          .map(
-            (airport): Airport => ({
-              id: airport.AirportID,
-              City: airport.City.trim(),
-              Country: airport.Country.trim(),
-              Name: airport.Name.trim(),
-            }),
-          );
+          .map(airport => ({
+            value: airport.AirportID.toString(),
+            label:
+              `${airport.City}${airport.Name ? ` (${airport.Name})` : ''}`.trim(),
+          }));
 
-        if (formattedAirports.length === 0) {
-          throw new Error('Нет данных об аэропортах после обработки');
-        }
-
-        const airportOptions = formattedAirports.map(airport => ({
-          value: airport.id.toString(),
-          label:
-            `${airport.City}${airport.Name ? ` (${airport.Name})` : ''}`.trim(),
-        }));
-
-        setAirports(airportOptions);
-
-        const rawFlights = flightsResponse as unknown as RawFlight[];
-
-        const formattedFlights = rawFlights
-          .filter(flight => {
-            const isValid =
-              flight &&
-              typeof flight.FlightID === 'number' &&
-              flight.DepartureTime &&
-              typeof flight.DepartureAirportID === 'number' &&
-              typeof flight.ArrivalAirportID === 'number';
-            return isValid;
-          })
-          .map((flight): Flight => {
-            const flightTickets = rawTickets.filter(
-              ticket => ticket.FlightID === flight.FlightID,
-            );
-
-            const airplane = rawAirplanes.find(
-              plane => plane.AirplaneID === flight.AirplaneID,
-            );
-
-            const soldTickets = flightTickets.filter(
-              ticket => ticket.PassengerID !== null,
-            ).length;
-
-            const minPrice = Math.min(
-              ...flightTickets.map(ticket => ticket.Price),
-            );
-
-            return {
-              id: flight.FlightID,
-              FlightNumber: (flight.FlightNumber || '').trim(),
-              DepartureAirportId: flight.DepartureAirportID,
-              ArrivalAirportId: flight.ArrivalAirportID,
-              DepartureTime: flight.DepartureTime,
-              ArrivalTime: (flight.ArrivalTime || '').trim(),
-              Price: minPrice || 0,
-              AvailableSeats: (airplane?.Capacity || 0) - soldTickets,
-            };
-          });
-
-        const upcomingFlights = formattedFlights
-          .filter(flight => {
-            try {
-              const departureDate = new Date(flight.DepartureTime);
-              return (
-                !isNaN(departureDate.getTime()) && departureDate > new Date()
-              );
-            } catch (error) {
-              return false;
-            }
-          })
-          .sort(
-            (a, b) =>
-              new Date(a.DepartureTime).getTime() -
-              new Date(b.DepartureTime).getTime(),
-          )
-          .slice(0, 6)
-          .map(flight => ({
-            ...flight,
-            departureAirport: formattedAirports.find(
-              a => a.id === flight.DepartureAirportId,
-            ),
-            arrivalAirport: formattedAirports.find(
-              a => a.id === flight.ArrivalAirportId,
-            ),
-          }))
-          .filter(flight => flight.departureAirport && flight.arrivalAirport);
-
-        setPopularFlights(upcomingFlights);
+        setAirports(formattedAirports);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        setPopularFlights([]);
+        console.error('Error fetching airports:', error);
         setAirports([]);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchAirports();
   }, []);
 
   const handleSearch = (from: string, to: string, date: string) => {
@@ -313,35 +151,7 @@ export const Home = () => {
 
         <section id="destinations" className={styles.destinations}>
           <div className={styles.contentContainer}>
-            <h2>Популярные направления</h2>
-            <div className={styles.flightGrid}>
-              {loading
-                ? Array(6)
-                    .fill(null)
-                    .map((_, index) => <Skeleton key={index} type="flight" />)
-                : popularFlights.map(flight => (
-                    <FlightCard
-                      key={flight.id}
-                      flight={{
-                        id: flight.id,
-                        FlightID: flight.FlightNumber,
-                        DepartureCity: flight.departureAirport?.City || '',
-                        ArrivalCity: flight.arrivalAirport?.City || '',
-                        DepartureAirport: flight.departureAirport?.Name || '',
-                        ArrivalAirport: flight.arrivalAirport?.Name || '',
-                        DepartureDate: flight.DepartureTime,
-                        Duration:
-                          Math.abs(
-                            (new Date(flight.ArrivalTime).getTime() -
-                              new Date(flight.DepartureTime).getTime()) /
-                              (1000 * 60),
-                          ) + ' мин',
-                        Price: flight.Price,
-                        AvailableSeats: flight.AvailableSeats,
-                      }}
-                    />
-                  ))}
-            </div>
+            <Popular />
           </div>
         </section>
 

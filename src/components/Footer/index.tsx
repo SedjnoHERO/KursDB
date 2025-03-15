@@ -9,7 +9,7 @@ export const Footer: React.FC<FooterProps> = ({ type = 'default' }) => {
     return (
       <footer className={`${styles.footer} ${styles.thin}`}>
         <div className={styles.copyright}>
-          © 2024 AirTravel. Все права защищены.
+          © 2024 AeroControl. Все права защищены.
         </div>
       </footer>
     );
@@ -22,7 +22,7 @@ export const Footer: React.FC<FooterProps> = ({ type = 'default' }) => {
           <div className={styles.footerSection}>
             <h3>Контакты</h3>
             <a href="tel:+78001234567">8 (800) 123-45-67</a>
-            <a href="mailto:support@airtravel.com">support@airtravel.com</a>
+            <a href="mailto:support@airtravel.com">support@aerocontrol.com</a>
           </div>
           <div className={styles.footerSection}>
             <h3>Информация</h3>
@@ -40,7 +40,7 @@ export const Footer: React.FC<FooterProps> = ({ type = 'default' }) => {
           </div>
         </div>
         <div className={styles.copyright}>
-          © 2024 AirTravel. Все права защищены.
+          © 2024 AeroControl. Все права защищены.
         </div>
       </div>
     </footer>
