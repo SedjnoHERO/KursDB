@@ -1,21 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Layout, FlightSection } from '@modules';
 import { FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
-import { Supabase } from '@api';
 import styles from './style.module.scss';
-
-interface Flight {
-  id: number;
-  FlightID: string;
-  DepartureCity: string;
-  ArrivalCity: string;
-  DepartureAirport: string;
-  ArrivalAirport: string;
-  DepartureDate: string;
-  Duration: string;
-  Price: number;
-  AvailableSeats: number;
-}
 
 interface Filters {
   departureCity: string;
@@ -27,16 +13,6 @@ interface Filters {
 }
 
 export const Catalog = () => {
-  // Состояния
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // Пагинация
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 6;
-
   // Поиск и фильтры
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -53,107 +29,9 @@ export const Catalog = () => {
   const [sortBy, setSortBy] = useState<'price' | 'date' | 'duration'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  // Загрузка данных
-  const fetchFlights = async () => {
-    setLoading(true);
-    try {
-      let query = Supabase.from('FLIGHT').select(`
-          *,
-          DepartureAirport:AIRPORT!DepartureAirportID(City),
-          ArrivalAirport:AIRPORT!ArrivalAirportID(City)
-        `);
-
-      // Применяем фильтры
-      if (filters.departureCity) {
-        query = query.ilike(
-          'DepartureAirport.City',
-          `%${filters.departureCity}%`,
-        );
-      }
-      if (filters.arrivalCity) {
-        query = query.ilike('ArrivalAirport.City', `%${filters.arrivalCity}%`);
-      }
-      if (filters.minPrice) {
-        query = query.gte('Price', filters.minPrice);
-      }
-      if (filters.maxPrice) {
-        query = query.lte('Price', filters.maxPrice);
-      }
-      if (filters.dateFrom) {
-        query = query.gte('DepartureTime', filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        query = query.lte('DepartureTime', filters.dateTo);
-      }
-
-      // Поиск
-      if (searchQuery) {
-        query = query.or(`
-          DepartureAirport.City.ilike.%${searchQuery}%,
-          ArrivalAirport.City.ilike.%${searchQuery}%
-        `);
-      }
-
-      // Сортировка
-      const sortField =
-        sortBy === 'date'
-          ? 'DepartureTime'
-          : sortBy === 'price'
-            ? 'Price'
-            : 'Duration';
-      query = query.order(sortField, { ascending: sortOrder === 'asc' });
-
-      // Пагинация
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = start + itemsPerPage - 1;
-      query = query.range(start, end);
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      // Преобразуем данные в нужный формат
-      const formattedFlights = data.map(flight => ({
-        id: flight.FlightID,
-        FlightID: flight.FlightNumber,
-        DepartureCity: flight.DepartureAirport.City,
-        ArrivalCity: flight.ArrivalAirport.City,
-        DepartureAirport: flight.DepartureAirport.Name,
-        ArrivalAirport: flight.ArrivalAirport.Name,
-        DepartureDate: flight.DepartureTime,
-        Duration: calculateDuration(flight.DepartureTime, flight.ArrivalTime),
-        Price: flight.Price,
-        AvailableSeats: flight.Capacity - (flight.BookedSeats || 0),
-      }));
-
-      setFlights(formattedFlights);
-      setTotalPages(Math.ceil((count || 0) / itemsPerPage));
-    } catch (err) {
-      setError('Ошибка при загрузке рейсов');
-      console.error('Ошибка загрузки:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateDuration = (departure: string, arrival: string) => {
-    const start = new Date(departure);
-    const end = new Date(arrival);
-    const diff = end.getTime() - start.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}ч ${minutes}м`;
-  };
-
-  useEffect(() => {
-    fetchFlights();
-  }, [currentPage, searchQuery, sortBy, sortOrder, filters]);
-
   // Обработчики
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1);
-    fetchFlights();
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,27 +57,10 @@ export const Catalog = () => {
       dateFrom: '',
       dateTo: '',
     });
-    setCurrentPage(1);
-  };
-
-  const renderPagination = () => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`${styles.pageButton} ${currentPage === i ? styles.active : ''}`}
-          onClick={() => setCurrentPage(i)}
-        >
-          {i}
-        </button>,
-      );
-    }
-    return pages;
   };
 
   return (
-    <Layout>
+    <Layout footerType="thin">
       <div className={styles.catalogPage}>
         <div className={styles.contentContainer}>
           {/* Поиск и фильтры */}
@@ -290,16 +151,8 @@ export const Catalog = () => {
           </div>
 
           <div className={styles.flightsContainer}>
-            {error ? (
-              <div className={styles.error}>{error}</div>
-            ) : (
-              <FlightSection columns={3} />
-            )}
+            <FlightSection />
           </div>
-
-          {!loading && !error && totalPages > 1 && (
-            <div className={styles.pagination}>{renderPagination()}</div>
-          )}
         </div>
       </div>
     </Layout>

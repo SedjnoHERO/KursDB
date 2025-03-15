@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import styles from './style.module.scss';
 
 interface FlightCardProps {
-  limit?: number;
   amount?: 1 | 3 | 5;
+  limit?: number;
+  offset?: number;
+  onTotalCountUpdate?: (count: number) => void;
 }
 
 interface Flight {
@@ -65,18 +67,23 @@ const FlightCardSkeleton = () => (
   </div>
 );
 
-export const FlightCard = ({ limit, amount = 3 }: FlightCardProps) => {
+export const FlightCard = ({
+  limit = 6,
+  amount = 3,
+  offset = 0,
+  onTotalCountUpdate,
+}: FlightCardProps) => {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchFlights();
-  }, [limit]);
+  }, [limit, offset]);
 
   const fetchFlights = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await Supabase.from('FLIGHT')
+      const { data, error, count } = await Supabase.from('FLIGHT')
         .select(
           `
           FlightID,
@@ -91,8 +98,9 @@ export const FlightCard = ({ limit, amount = 3 }: FlightCardProps) => {
           ),
           tickets:TICKET(Price)
         `,
+          { count: 'exact' },
         )
-        .limit(limit || 10);
+        .range(offset, offset + limit - 1);
 
       if (error) throw error;
       if (data) {
@@ -109,6 +117,9 @@ export const FlightCard = ({ limit, amount = 3 }: FlightCardProps) => {
           }),
         );
         setFlights(formattedFlights);
+        if (count && onTotalCountUpdate) {
+          onTotalCountUpdate(count);
+        }
       }
     } catch (error) {
       console.error('Error fetching flights:', error);
