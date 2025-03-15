@@ -222,7 +222,14 @@
 
   @media (max-width: 768px) {
     padding: 0;
-    gap: 10px;
+  }
+
+  &.grid-1 {
+    gap: 24px;
+
+    @media (max-width: 768px) {
+      gap: 16px;
+    }
   }
 }
 
@@ -233,8 +240,8 @@
     margin: 0 auto;
     
     @media (max-width: 768px) {
-      flex: 0 0 100%;
-      max-width: 100%;
+      flex: 0 0 calc(90% - 10px);
+      max-width: calc(90% - 10px);
     }
   }
 }

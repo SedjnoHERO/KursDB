@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Layout, FlightCard } from '@modules';
-import { FaSearch, FaFilter, FaSortAmountDown, FaTimes } from 'react-icons/fa';
-import { TableAPI, Supabase } from '@api';
+import { Layout, FlightSection } from '@modules';
+import { FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
+import { Supabase } from '@api';
 import styles from './style.module.scss';
 
 interface Flight {
@@ -289,42 +289,16 @@ export const Catalog = () => {
             )}
           </div>
 
-          {/* Список рейсов */}
-          {loading ? (
-            <div className={styles.loading}>Загрузка...</div>
-          ) : error ? (
-            <div className={styles.error}>{error}</div>
-          ) : flights.length === 0 ? (
-            <div className={styles.empty}>Рейсы не найдены</div>
-          ) : (
-            <div className={styles.flightsList}>
-              {flights.map(flight => (
-                <FlightCard key={flight.id} flight={flight} />
-              ))}
-            </div>
-          )}
+          <div className={styles.flightsContainer}>
+            {error ? (
+              <div className={styles.error}>{error}</div>
+            ) : (
+              <FlightSection columns={3} />
+            )}
+          </div>
 
-          {/* Пагинация */}
-          {!loading && !error && flights.length > 0 && (
-            <div className={styles.pagination}>
-              <button
-                className={styles.pageButton}
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                ←
-              </button>
-              {renderPagination()}
-              <button
-                className={styles.pageButton}
-                onClick={() =>
-                  setCurrentPage(prev => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-              >
-                →
-              </button>
-            </div>
+          {!loading && !error && totalPages > 1 && (
+            <div className={styles.pagination}>{renderPagination()}</div>
           )}
         </div>
       </div>

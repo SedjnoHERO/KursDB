@@ -66,6 +66,25 @@ const DefaultHeader = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (window.innerWidth <= 768 && isMobileMenuOpen) {
+          setIsMobileMenuOpen(false);
+        }
+      }, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, [isMobileMenuOpen]);
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
     document.body.style.overflow = !isMobileMenuOpen ? 'hidden' : '';
@@ -138,11 +157,11 @@ const DefaultHeader = () => {
   );
 };
 
-export const Header: React.FC<IHeaderProps> = ({
+export const Header = ({
   type = 'default',
   activeType,
   onTypeChange,
-}) => {
+}: IHeaderProps) => {
   return (
     <header
       className={`${styles.header} ${type === 'admin' ? styles.adminHeader : ''}`}

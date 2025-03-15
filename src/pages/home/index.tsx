@@ -152,6 +152,7 @@ export const Home = () => {
         <section id="destinations" className={styles.destinations}>
           <div className={styles.contentContainer}>
             <FlightSection
+              type="popular"
               title="Популярные направления"
               limit={6}
               columns={3}
