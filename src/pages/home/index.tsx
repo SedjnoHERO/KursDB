@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FaMoneyBillWave, FaShieldAlt, FaHeadset } from 'react-icons/fa';
 import { TableAPI } from '@api';
-import { ServiceCard, SearchBox, Popular } from '@modules';
+import { ServiceCard, SearchBox, FlightSection } from '@modules';
 import { Layout } from '@modules';
 
 import styles from './style.module.scss';
@@ -151,7 +151,11 @@ export const Home = () => {
 
         <section id="destinations" className={styles.destinations}>
           <div className={styles.contentContainer}>
-            <Popular />
+            <FlightSection
+              title="Популярные направления"
+              limit={6}
+              columns={3}
+            />
           </div>
         </section>
 
