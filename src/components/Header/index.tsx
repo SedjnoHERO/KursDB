@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FaPlane, FaBars, FaTimes } from 'react-icons/fa';
 import { EntityType } from '@api';
-import { ProfileButton } from '@components';
+import { ProfileButton } from '../ProfileButton';
 import styles from './style.module.scss';
 
 interface MenuItem {
@@ -30,9 +30,19 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
     { type: 'AIRPORT', label: 'Аэропорты' },
   ];
 
+  const handleLogoClick = () => {
+    window.location.reload();
+  };
+
   return (
     <div className={styles.headerContent}>
-      <span className={styles.logo}>AeroControl</span>
+      <span
+        className={styles.logo}
+        onClick={handleLogoClick}
+        style={{ cursor: 'pointer' }}
+      >
+        AeroControl
+      </span>{' '}
       <nav className={styles.nav}>
         {menuItems.map(item => (
           <div
@@ -65,49 +75,34 @@ const DefaultHeader = () => {
   }, []);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
 
-    const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        if (window.innerWidth <= 768 && isMobileMenuOpen) {
-          setIsMobileMenuOpen(false);
-        }
-      }, 150);
-    };
-
-    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
+      document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-    document.body.style.overflow = !isMobileMenuOpen ? 'hidden' : '';
   };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    document.body.style.overflow = '';
   };
 
   const scrollToSection = (sectionId: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     const section = document.getElementById(sectionId);
     if (section) {
-      const navHeight =
-        document.querySelector(`.${styles.nav}`)?.getBoundingClientRect()
-          .height || 0;
-      const offset =
-        section.getBoundingClientRect().top + window.scrollY - navHeight;
-
+      const offset = section.offsetTop - 80;
       window.scrollTo({
         top: offset,
         behavior: 'smooth',
       });
-
       closeMobileMenu();
     }
   };
@@ -124,7 +119,7 @@ const DefaultHeader = () => {
         <button
           className={styles.mobileMenuButton}
           onClick={toggleMobileMenu}
-          aria-label="Меню"
+          aria-label={isMobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
         >
           {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
         </button>
