@@ -34,14 +34,11 @@ export const Auth = () => {
     }
 
     try {
-      // Здесь будет проверка существования email в API
-      const isExistingUser = false; // Временно для демонстрации
+      const isExistingUser = false;
 
       if (isExistingUser) {
-        // Если пользователь существует - сразу в профиль
         navigate('/profile');
       } else {
-        // Если новый пользователь - на форму регистрации
         setStep('registration');
       }
     } catch (error) {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TableAPI } from '@api';
-import { FlightCard } from '../FlightCard';
-import { Skeleton } from '../Skeleton';
+import { FlightCard } from '@modules';
+import { Skeleton } from '@components';
 import styles from './style.module.scss';
 
 interface Airport {

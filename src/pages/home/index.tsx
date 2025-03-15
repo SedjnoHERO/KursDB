@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FaMoneyBillWave, FaShieldAlt, FaHeadset } from 'react-icons/fa';
 import { TableAPI } from '@api';
-import { ServiceCard, SearchBox, Popular } from '@components';
+import { ServiceCard, SearchBox, Popular } from '@modules';
 import { Layout } from '@modules';
 
 import styles from './style.module.scss';

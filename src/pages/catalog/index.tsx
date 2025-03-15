@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout } from '@modules';
-import { FlightCard } from '@components';
+import { Layout, FlightCard } from '@modules';
 import { FaSearch, FaFilter, FaSortAmountDown, FaTimes } from 'react-icons/fa';
 import { TableAPI, Supabase } from '@api';
 import styles from './style.module.scss';
