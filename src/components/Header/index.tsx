@@ -10,7 +10,7 @@ interface MenuItem {
 }
 
 interface IHeaderProps {
-  type: 'default' | 'admin';
+  type: 'default' | 'admin' | 'minimal';
   activeType?: EntityType;
   onTypeChange?: (type: EntityType) => void;
 }
@@ -157,22 +157,57 @@ const DefaultHeader = () => {
   );
 };
 
-export const Header = ({
-  type = 'default',
-  activeType,
-  onTypeChange,
-}: IHeaderProps) => {
+const MinimalHeader = () => {
+  const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav
+      className={`${styles.defaultNav} ${isScrolled ? styles.scrolled : ''}`}
+    >
+      <div className={styles.contentContainer}>
+        <a href="/" className={styles.logo}>
+          <FaPlane />
+          AeroControl
+        </a>
+        <div className={styles.navLinks}>
+          <button
+            className={styles.authButton}
+            onClick={() => navigate('/auth')}
+          >
+            Войти
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export const Header = ({ type, activeType, onTypeChange }: IHeaderProps) => {
   return (
     <header
       className={`${styles.header} ${type === 'admin' ? styles.adminHeader : ''}`}
     >
       {type === 'default' ? (
         <DefaultHeader />
-      ) : (
+      ) : type === 'admin' ? (
         <AdminHeader
           activeType={activeType || 'PASSENGER'}
           onTypeChange={onTypeChange || (() => {})}
         />
+      ) : (
+        <MinimalHeader />
       )}
     </header>
   );

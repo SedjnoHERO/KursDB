@@ -7,7 +7,7 @@ import styles from './style.module.scss';
 
 interface LayoutProps {
   children: ReactNode;
-  headerType?: 'default' | 'admin';
+  headerType?: 'default' | 'admin' | 'minimal';
   footerType?: 'default' | 'thin';
   activeType?: EntityType;
   onTypeChange?: (type: EntityType) => void;
@@ -15,7 +15,7 @@ interface LayoutProps {
 
 export const Layout: FC<LayoutProps> = ({
   children,
-  headerType = 'default',
+  headerType = 'minimal',
   footerType = 'default',
   activeType,
   onTypeChange,
