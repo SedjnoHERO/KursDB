@@ -27,12 +27,12 @@
 
 .profileMenu {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: calc(100% + 8px);
   right: 0;
-  background: var(--background-color);
+  background: #fff;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem;
   min-width: 200px;
   z-index: 1000;
 
@@ -42,8 +42,10 @@
     left: 0;
     right: 0;
     top: auto;
-    border-radius: 16px 16px 0 0;
-    padding: 1.5rem;
+    border-radius: 12px 12px 0 0;
+    min-width: auto;
+    background: #fff;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   }
 
   .userInfo {
@@ -52,39 +54,50 @@
     gap: 0.25rem;
     padding-bottom: 0.75rem;
     margin-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #eee;
 
     span {
-      font-size: 0.9rem;
-      color: var(--text-color);
+      font-size: 0.95rem;
+      color: #333;
 
       &.role {
-        color: var(--text-secondary);
-        font-size: 0.8rem;
+        color: #666;
+        font-size: 0.85rem;
       }
     }
   }
 
   button {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     text-align: left;
     background: none;
     border: none;
-    border-radius: 4px;
-    color: var(--text-color);
-    font-size: 0.9rem;
+    border-radius: 6px;
+    color: #333;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: background-color 0.2s;
 
     @media (hover: hover) {
       &:hover {
-        background-color: var(--hover-color);
+        background-color: #f5f5f5;
       }
     }
 
     &:not(:last-child) {
       margin-bottom: 0.25rem;
+    }
+
+    &:last-child {
+      margin-top: 0.25rem;
+      color: #ef4444;
+
+      @media (hover: hover) {
+        &:hover {
+          background-color: #fee2e2;
+        }
+      }
     }
   }
 }
@@ -96,7 +109,6 @@
   background: transparent;
   color: var(--text-color);
   font-size: 0.95rem;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 
