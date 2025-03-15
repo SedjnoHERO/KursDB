@@ -1,0 +1,441 @@
+.flightCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 320px;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-sizing: border-box;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
+    }
+  }
+
+  @media (max-width: 932px) {
+    max-width: none;
+    width: calc(100% - 2rem);
+    margin: 0 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    gap: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+
+    @media (hover: hover) {
+      &:hover {
+        transform: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .cities {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    padding-bottom: 1rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+
+    @media (max-width: 932px) {
+      padding-bottom: 0.75rem;
+      margin-bottom: 0;
+      gap: 0.5rem;
+      border-bottom: none;
+    }
+
+    .city {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+      flex: 1;
+      min-width: 0;
+      
+      @media (max-width: 932px) {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      
+      &:first-child {
+        text-align: left;
+      }
+      
+      &:last-child {
+        text-align: right;
+      }
+    }
+
+    .arrow {
+      color: #2563eb;
+      font-size: 1.1rem;
+      position: relative;
+      padding: 0.4rem;
+      background: rgba(37, 99, 235, 0.1);
+      border-radius: 50%;
+      flex-shrink: 0;
+
+      @media (max-width: 932px) {
+        font-size: 0.9rem;
+        padding: 0.35rem;
+      }
+    }
+  }
+
+  .info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+
+    @media (max-width: 932px) {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #475569;
+
+      @media (max-width: 932px) {
+        padding: 0.5rem;
+        background: rgba(241, 245, 249, 0.5);
+      }
+
+      svg {
+        color: #2563eb;
+        font-size: 1rem;
+        opacity: 0.8;
+
+        @media (max-width: 932px) {
+          font-size: 0.9rem;
+        }
+      }
+
+      &:has(svg[class*="FaMoneyBillWave"]) {
+        grid-column: 1 / -1;
+        background: #dcfce7;
+        color: #15803d;
+        font-weight: 600;
+        font-size: 1.1rem;
+        justify-content: center;
+
+        svg {
+          color: #15803d;
+        }
+
+        @media (max-width: 932px) {
+          font-size: 1rem;
+          background: rgba(220, 252, 231, 0.5);
+          border: 1px solid rgba(21, 128, 61, 0.1);
+        }
+      }
+    }
+
+    .seats {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: #1e293b;
+      color: white;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+
+      @media (max-width: 932px) {
+        background: #334155;
+        font-size: 0.8rem;
+        padding: 0.4rem;
+      }
+    }
+  }
+
+  .bookButton {
+    margin-top: 0.75rem;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+
+    @media (max-width: 932px) {
+      margin-top: 0.5rem;
+      padding: 0.6rem;
+      font-size: 0.9rem;
+      background: linear-gradient(to right, #2563eb, #1d4ed8);
+      border-radius: 6px;
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+
+  &.grid-1 {
+    gap: 24px;
+
+    @media (max-width: 768px) {
+      gap: 16px;
+    }
+  }
+}
+
+.grid-1 {
+  .card {
+    flex: 0 0 80%;
+    max-width: 80%;
+    margin: 0 auto;
+    
+    @media (max-width: 768px) {
+      flex: 0 0 calc(90% - 10px);
+      max-width: calc(90% - 10px);
+    }
+  }
+}
+
+.grid-3 {
+  .card {
+    flex: 0 0 calc(25% - 14px);
+    max-width: calc(25% - 14px);
+    
+    @media (max-width: 1200px) {
+      flex: 0 0 calc(40% - 10px);
+      max-width: calc(40% - 10px);
+    }
+    
+    @media (max-width: 768px) {
+      flex: 0 0 calc(80% - 10px);
+      max-width: calc(80% - 10px);
+      margin: 0 auto;
+    }
+  }
+}
+
+.grid-5 {
+  .card {
+    flex: 0 0 calc(18% - 16px);
+    max-width: calc(18% - 16px);
+    
+    @media (max-width: 1400px) {
+      flex: 0 0 calc(22% - 15px);
+      max-width: calc(22% - 15px);
+    }
+    
+    @media (max-width: 1200px) {
+      flex: 0 0 calc(30% - 14px);
+      max-width: calc(30% - 14px);
+    }
+    
+    @media (max-width: 992px) {
+      flex: 0 0 calc(45% - 10px);
+      max-width: calc(45% - 10px);
+    }
+    
+    @media (max-width: 768px) {
+      flex: 0 0 calc(90% - 10px);
+      max-width: calc(90% - 10px);
+      margin: 0 auto;
+    }
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    &::before {
+      height: 3px;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        transform: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+
+  .mainInfo {
+    flex: 1;
+    margin-bottom: 1rem;
+
+    .cities {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      position: relative;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+
+      @media (max-width: 768px) {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+      }
+
+      &::after {
+        content: '→';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #2563eb;
+        font-size: 1.25rem;
+
+        @media (max-width: 768px) {
+          font-size: 1rem;
+        }
+      }
+    }
+
+    .times {
+      display: flex;
+      justify-content: space-between;
+      color: #64748b;
+      font-size: 0.875rem;
+
+      @media (max-width: 768px) {
+        font-size: 0.8125rem;
+      }
+    }
+  }
+
+  .additionalInfo {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+
+    @media (max-width: 768px) {
+      padding-top: 0.75rem;
+    }
+
+    .transport {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.75rem;
+      
+      span {
+        color: #64748b;
+        font-size: 0.875rem;
+
+        @media (max-width: 768px) {
+          font-size: 0.8125rem;
+        }
+      }
+    }
+
+    .price {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2563eb;
+
+      @media (max-width: 768px) {
+        font-size: 1.125rem;
+      }
+    }
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+} 

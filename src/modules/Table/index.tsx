@@ -178,6 +178,10 @@ export const TableComponent = ({ type }: ITableProps) => {
     { value: 'canceled', label: 'Отменено' },
   ];
 
+  const handleSelectorChange = (column: string) => (value: string) => {
+    setFormData({ ...formData, [column]: value });
+  };
+
   const renderForm = (
     onSubmit: () => void,
     columns: string[],
@@ -206,6 +210,107 @@ export const TableComponent = ({ type }: ITableProps) => {
           column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
         ] || column;
 
+      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = e.target;
+
+        // Валидация при вводе
+        switch (column) {
+          case 'FirstName':
+          case 'LastName':
+          case 'City':
+          case 'Country':
+            if (!/^[A-Za-zА-Яа-яЁё\s-]*$/.test(value)) return;
+            break;
+
+          case 'Phone':
+            if (!/^[0-9+\-\s()]*$/.test(value)) return;
+            break;
+
+          case 'Capacity':
+            if (!/^\d*$/.test(value)) return;
+            const capacityValue = Number(value);
+            if (capacityValue > 555) {
+              toast.error('Вместимость не может быть больше 555 пассажиров');
+              return;
+            }
+            break;
+
+          case 'PassportSeries':
+            if (!/^[A-ZА-Я]*$/.test(value)) return;
+            break;
+
+          case 'PassportNumber':
+            if (!/^\d*$/.test(value)) return;
+            break;
+        }
+
+        setFormData({ ...formData, [column]: value });
+      };
+
+      // Специальная обработка для дат рейса
+      const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = e.target;
+        const newDate = new Date(value);
+
+        if (column === 'ArrivalTime' && formData.DepartureTime) {
+          const departureDate = new Date(formData.DepartureTime);
+
+          const isSameDay =
+            departureDate.getFullYear() === newDate.getFullYear() &&
+            departureDate.getMonth() === newDate.getMonth() &&
+            departureDate.getDate() === newDate.getDate();
+
+          if (isSameDay && newDate <= departureDate) {
+            toast.error(
+              'Время прибытия должно быть позже времени вылета в тот же день',
+            );
+            return;
+          }
+
+          const diffHours =
+            (newDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60);
+          if (diffHours > 24) {
+            toast.error('Длительность полета не может превышать 24 часа');
+            return;
+          }
+        }
+
+        if (column === 'DepartureTime' && formData.ArrivalTime) {
+          const arrivalDate = new Date(formData.ArrivalTime);
+
+          if (newDate >= arrivalDate) {
+            toast.error('Время вылета не может быть позже времени прибытия');
+            return;
+          }
+
+          const diffHours =
+            (arrivalDate.getTime() - newDate.getTime()) / (1000 * 60 * 60);
+          if (diffHours > 24) {
+            toast.error('Длительность полета не может превышать 24 часа');
+            return;
+          }
+        }
+
+        if (column === 'PurchaseDate') {
+          const purchaseDate = newDate;
+          const now = new Date();
+          const yearAgo = new Date();
+          yearAgo.setFullYear(now.getFullYear() - 1);
+
+          if (purchaseDate > now) {
+            toast.error('Дата покупки не может быть в будущем');
+            return;
+          }
+
+          if (purchaseDate < yearAgo) {
+            toast.error('Дата покупки не может быть раньше, чем год назад');
+            return;
+          }
+        }
+
+        setFormData({ ...formData, [column]: value });
+      };
+
       if (column === 'Gender') {
         return (
           <div key={`field-${column}`} className={styles.field}>
@@ -213,7 +318,7 @@ export const TableComponent = ({ type }: ITableProps) => {
             <Selector
               options={genderOptions}
               value={formData[column]}
-              onChange={value => setFormData({ ...formData, [column]: value })}
+              onChange={handleSelectorChange(column)}
             />
           </div>
         );
@@ -226,7 +331,7 @@ export const TableComponent = ({ type }: ITableProps) => {
             <Selector
               options={roleOptions}
               value={formData[column]}
-              onChange={value => setFormData({ ...formData, [column]: value })}
+              onChange={handleSelectorChange(column)}
             />
           </div>
         );
@@ -239,22 +344,27 @@ export const TableComponent = ({ type }: ITableProps) => {
             <Selector
               options={statusOptions}
               value={formData[column]}
-              onChange={value => setFormData({ ...formData, [column]: value })}
+              onChange={handleSelectorChange(column)}
             />
           </div>
         );
       }
 
       if (column === 'DateOfBirth') {
+        const maxDate = new Date();
+        const minDate = new Date();
+        minDate.setFullYear(maxDate.getFullYear() - 90);
+        maxDate.setFullYear(maxDate.getFullYear() - 2);
+
         return (
           <div key={`field-${column}`} className={styles.field}>
             <label>{columnLabel}</label>
             <input
               type="date"
-              value={formData[column] || ''}
-              onChange={e =>
-                setFormData({ ...formData, [column]: e.target.value })
-              }
+              value={formData[column]?.split('T')[0] || ''}
+              onChange={handleInputChange}
+              max={maxDate.toISOString().split('T')[0]}
+              min={minDate.toISOString().split('T')[0]}
             />
           </div>
         );
@@ -265,19 +375,46 @@ export const TableComponent = ({ type }: ITableProps) => {
         column === 'DepartureTime' ||
         column === 'ArrivalTime'
       ) {
+        const now = new Date();
+        const yearAgo = new Date();
+        yearAgo.setFullYear(now.getFullYear() - 1);
+
+        let minValue: string | undefined;
+        let maxValue: string | undefined;
+
+        if (column === 'PurchaseDate') {
+          minValue = yearAgo.toISOString().slice(0, 16);
+          maxValue = now.toISOString().slice(0, 16);
+        } else if (column === 'ArrivalTime') {
+          minValue = formData.DepartureTime;
+        }
+
         return (
           <div key={`field-${column}`} className={styles.field}>
             <label>{columnLabel}</label>
             <input
               type="datetime-local"
               value={formData[column] || ''}
-              onChange={e =>
-                setFormData({ ...formData, [column]: e.target.value })
-              }
+              onChange={handleDateChange}
               className={styles.datetimeInput}
-              min={
-                column === 'ArrivalTime' ? formData.DepartureTime : undefined
-              }
+              min={minValue}
+              max={maxValue}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'Capacity') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <input
+              type="number"
+              value={formData[column] || ''}
+              onChange={handleInputChange}
+              min="5"
+              max="555"
+              placeholder="Введите вместимость"
             />
           </div>
         );
@@ -289,9 +426,7 @@ export const TableComponent = ({ type }: ITableProps) => {
           <input
             type="text"
             value={formData[column] || ''}
-            onChange={e =>
-              setFormData({ ...formData, [column]: e.target.value })
-            }
+            onChange={handleInputChange}
             placeholder={`Введите ${columnLabel.toLowerCase()}`}
           />
         </div>
@@ -335,7 +470,18 @@ export const TableComponent = ({ type }: ITableProps) => {
   const formatCellValue = (value: any, column: string) => {
     if (value === null || value === undefined) return '-';
 
-    if (column.includes('Time') || column.includes('Date')) {
+    if (column === 'DateOfBirth') {
+      try {
+        const date = new Date(value);
+        return date.toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+      } catch {
+        return value;
+      }
+    } else if (column.includes('Time') || column.includes('Date')) {
       try {
         const date = new Date(value);
         return date.toLocaleString('ru-RU', {
@@ -638,6 +784,71 @@ export const TableComponent = ({ type }: ITableProps) => {
       column => column !== idFields[type] && column !== 'created_at',
     );
 
+    // Проверка возраста пассажира
+    const validatePassengerAge = (birthDate: string) => {
+      const birth = new Date(birthDate);
+      const today = new Date();
+      const age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+
+      const adjustedAge =
+        monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())
+          ? age - 1
+          : age;
+
+      if (adjustedAge > 90) {
+        toast.error('Возраст пассажира не может быть больше 90 лет');
+        return false;
+      }
+
+      if (adjustedAge < 2) {
+        toast.error('Возраст пассажира не может быть меньше 2 лет');
+        return false;
+      }
+
+      return true;
+    };
+
+    // Регулярные выражения для валидации
+    const patterns = {
+      onlyLetters: /^[A-Za-zА-Яа-яЁё\s-]+$/,
+      onlyNumbers: /^\d+$/,
+      email: /\S+@\S+\.\S+/,
+      phone: /^\+?\d{10,15}$/,
+      passportSeries: /^[A-ZА-Я]{2}$/,
+      passportNumber: /^\d{7}$/,
+      flightNumber: /^[A-Z]{2}\d{3,4}$/,
+    };
+
+    // Проверка числовых значений
+    const validateNumber = (value: number, min: number, field: string) => {
+      if (value < min) {
+        toast.error(`Поле "${field}" не может быть меньше ${min}`);
+        return false;
+      }
+      return true;
+    };
+
+    // Проверка дат для рейса
+    const validateFlightDates = (departure: string, arrival: string) => {
+      const departureDate = new Date(departure);
+      const arrivalDate = new Date(arrival);
+      const diffHours =
+        (arrivalDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60);
+
+      if (departureDate >= arrivalDate) {
+        toast.error('Время прибытия должно быть позже времени вылета');
+        return false;
+      }
+
+      if (diffHours > 24) {
+        toast.error('Длительность полета не может превышать 24 часа');
+        return false;
+      }
+
+      return true;
+    };
+
     for (const field of requiredFields) {
       const value = formData[field];
 
@@ -647,16 +858,84 @@ export const TableComponent = ({ type }: ITableProps) => {
         return false;
       }
 
-      // Специальные проверки для строковых полей
-      const stringValue = String(value);
+      // Валидация в зависимости от типа поля
+      switch (field) {
+        case 'DateOfBirth':
+          if (type === 'PASSENGER' && !validatePassengerAge(value)) {
+            return false;
+          }
+          break;
 
-      if (field === 'Email' && !/\S+@\S+\.\S+/.test(stringValue)) {
-        toast.error('Некорректный формат email');
-        return false;
+        case 'FirstName':
+        case 'LastName':
+        case 'City':
+        case 'Country':
+          if (!patterns.onlyLetters.test(value)) {
+            toast.error(`Поле "${field}" должно содержать только буквы`);
+            return false;
+          }
+          break;
+
+        case 'Capacity':
+          const capacity = Number(value);
+          if (capacity < 5) {
+            toast.error(
+              'Вместимость самолета должна быть не менее 5 пассажиров',
+            );
+            return false;
+          }
+          if (capacity > 555) {
+            toast.error(
+              'Вместимость самолета не может превышать 555 пассажиров',
+            );
+            return false;
+          }
+          break;
+
+        case 'Price':
+          if (!validateNumber(Number(value), 0, field)) return false;
+          break;
+
+        case 'Email':
+          if (!patterns.email.test(value)) {
+            toast.error('Некорректный формат email');
+            return false;
+          }
+          break;
+
+        case 'Phone':
+          if (!patterns.phone.test(value)) {
+            toast.error('Некорректный формат телефона');
+            return false;
+          }
+          break;
+
+        case 'PassportSeries':
+          if (!patterns.passportSeries.test(value)) {
+            toast.error('Серия паспорта должна содержать 2 заглавные буквы');
+            return false;
+          }
+          break;
+
+        case 'PassportNumber':
+          if (!patterns.passportNumber.test(value)) {
+            toast.error('Номер паспорта должен содержать 7 цифр');
+            return false;
+          }
+          break;
+
+        case 'FlightNumber':
+          if (!patterns.flightNumber.test(value)) {
+            toast.error('Некорректный формат номера рейса (например: AA123)');
+            return false;
+          }
+          break;
       }
+    }
 
-      if (field === 'Phone' && !/^\+?\d{10,15}$/.test(stringValue)) {
-        toast.error('Некорректный формат телефона');
+    // Проверка дат для рейса
+    if (type === 'FLIGHT') {
+      if (!validateFlightDates(formData.DepartureTime, formData.ArrivalTime)) {
         return false;
       }
     }

@@ -1,7 +1,7 @@
 import styles from './style.module.scss';
 
 interface ISkeletonProps {
-  type?: 'text' | 'title' | 'button';
+  type?: 'text' | 'title' | 'button' | 'flight';
   style?: React.CSSProperties;
 }
 

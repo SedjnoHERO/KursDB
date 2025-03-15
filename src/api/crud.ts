@@ -9,6 +9,7 @@ export type EntityType = 'AIRPORT' | 'AIRPLANE' | 'AIRLINE' | 'FLIGHT' | 'TICKET
 // }
 
 interface Airport {
+  AirportID: number;
   Name: string;
   City: string;
   Country: string;
@@ -16,17 +17,20 @@ interface Airport {
 }
 
 interface Airline {
+  AirlineID: number;
   Name: string;
   Country: string;
 }
 
 interface Airplane {
+  AirplaneID: number;
   AirlineID: number;
   Model: string;
   Capacity: number;
 }
 
 interface Flight {
+  FlightID: number;
   FlightNumber: string;
   AirplaneID: number;
   DepartureAirportID: number;
@@ -36,6 +40,7 @@ interface Flight {
 }
 
 interface Passenger {
+  PassengerID: number;
   Gender: 'Male' | 'Female';
   FirstName: string;
   LastName: string;
@@ -48,12 +53,13 @@ interface Passenger {
 }
 
 interface Ticket {
+  TicketID: number;
   FlightID: number;
   PassengerID: number;
-  PurchaseDate?: string;
+  PurchaseDate: string;
   SeatNumber: string;
   Price: number;
-  Status?: 'booked' | 'canceled' | 'checked-in';
+  Status: 'booked' | 'canceled' | 'checked-in';
 }
 
 type EntityTypeToInterface = {

@@ -1,11 +1,53 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ErrorPage, Home } from '@pages';
+import {
+  ErrorPage,
+  Home,
+  Auth,
+  AdminPage,
+  TicketDetail,
+  Profile,
+  Catalog,
+} from '@pages';
 import { useInternet } from '@hooks';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  createRoutesFromElements,
+  Route,
+  Navigate,
+  Outlet,
+} from 'react-router-dom';
+import './registerSW';
+import '@styles/global.scss';
 
 const App = () => {
   const isOnline = useInternet();
-  return <StrictMode>{isOnline ? <Home /> : <ErrorPage />}</StrictMode>;
+
+  if (!isOnline) {
+    return <ErrorPage />;
+  }
+
+  return <Outlet />;
 };
 
-createRoot(document.getElementById('root')!).render(<App />);
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<App />}>
+      <Route path="/" element={<Home />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/error" element={<ErrorPage />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/catalog" element={<Catalog />} />
+      <Route path="/ticket/:id" element={<TicketDetail />} />
+      <Route path="*" element={<Navigate to="/error" replace />} />
+    </Route>,
+  ),
+);
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <RouterProvider router={router} future={{ v7_startTransition: true }} />
+  </StrictMode>,
+);

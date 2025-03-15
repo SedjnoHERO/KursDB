@@ -1,75 +1,346 @@
-@import '@theme/colors';
-@import '@theme/spacing';
+:global {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    scroll-padding-top: 70px;
+  }
+}
 
 .container {
-  background-color: var(--background-primary);
-  font-family: var(--font-family);
-  padding-top: 64px;
-}
+  min-height: 100vh;
+  background: #f8fafc;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
 
-.content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.buttonContainer {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-m);
-  margin-bottom: var(--spacing-l);
-
-  .button {
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--border-radius-m);
-    padding: var(--spacing-m);
+  .hero {
+    min-height: 100vh;
     display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: var(--spacing-s);
-    transition: all 0.2s ease;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
+    text-align: center;
+    padding: 6rem 1rem;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+      url('/images/hero-bg.jpg') no-repeat center center;
+    background-size: cover;
+    color: white;
 
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: var(--primary-light);
-      background-color: var(--primary);
-      color: var(--background-secondary);
-
-      .icon {
-        color: var(--background-secondary);
-      }
-
-      .label {
-        color: var(--background-secondary);
-      }
+    h1 {
+      font-size: clamp(2rem, 5vw, 4rem);
+      margin-bottom: 1rem;
+      font-weight: 700;
     }
 
-    .icon {
-      width: 24px;
-      height: 24px;
-      color: var(--primary);
-    }
-
-    .label {
-      font-weight: var(--font-weight-medium);
-      color: var(--text-primary);
+    p {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      margin-bottom: 3rem;
+      max-width: 600px;
+      line-height: 1.6;
     }
   }
 }
 
-.btn {
-    width: 100px;
-    height: 50px;
-    background-color: var(--primary);
-    color: $white;
-    border: none;
-    border-radius: map-get($spacing, l);
-
-
-    &:hover {
-        background-color: var(--primary);    
-    }   
+.contentContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
+
+.services {
+  padding: 6rem 0;
+  background: #f8fafc;
+
+  h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    margin-bottom: 4rem;
+    color: #1e293b;
+  }
+}
+
+.serviceCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+
+  @media (max-width: 932px) {
+    display: flex;
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.destinations {
+  padding: 6rem 0;
+  background: white;
+
+  h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    margin-bottom: 4rem;
+    color: #1e293b;
+  }
+}
+
+.flightGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+
+  @media (max-width: 932px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+
+    & > *:nth-child(n+4) {
+      display: none;
+    }
+  }
+}
+
+.about {
+  padding: 6rem 0;
+  background: #f8fafc;
+
+  .aboutContent {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      margin-bottom: 2rem;
+      color: #1e293b;
+    }
+
+    p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #64748b;
+      margin-bottom: 4rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 3rem;
+      justify-items: center;
+
+      .stat {
+        h3 {
+          font-size: clamp(2rem, 3vw, 3rem);
+          color: #2563eb;
+          margin-bottom: 0.5rem;
+        }
+
+        p {
+          font-size: 1.1rem;
+          color: #1e293b;
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+.footer {
+  background: #1e293b;
+  color: white;
+  padding: 6rem 0 2rem;
+
+  .footerContent {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 4rem;
+
+    .footerSection {
+      h3 {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        color: white;
+      }
+
+      a {
+        display: block;
+        color: #94a3b8;
+        text-decoration: none;
+        margin-bottom: 1rem;
+        transition: color 0.3s ease;
+
+        @media (hover: hover) {
+          &:hover {
+            color: white;
+          }
+        }
+      }
+
+      .subscribe {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+
+        input {
+          flex: 1;
+          min-width: 0;
+          padding: 0.75rem 1rem;
+          border: 1px solid #475569;
+          background: #334155;
+          color: white;
+          border-radius: 8px;
+          font-size: 1rem;
+
+          &::placeholder {
+            color: #94a3b8;
+          }
+
+          &:focus {
+            outline: none;
+            border-color: #2563eb;
+          }
+        }
+
+        button {
+          padding: 0.75rem 1.5rem;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+
+          @media (hover: hover) {
+            &:hover {
+              background: #1d4ed8;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .copyright {
+    text-align: center;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid #334155;
+    color: #94a3b8;
+  }
+}
+
+@media (max-width: 1024px) {
+  .contentContainer {
+    padding: 0 2rem;
+  }
+
+  .services, .destinations, .about {
+    padding: 4rem 0;
+  }
+}
+
+@media (max-width: 932px) {
+  .contentContainer {
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .services, .destinations, .about {
+    padding: 3rem 0;
+
+    h2 {
+      margin-bottom: 2rem;
+      padding: 0 1rem;
+    }
+  }
+
+  .serviceCards {
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .aboutContent {
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    
+    .stats {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+  }
+
+  .footer {
+    padding: 3rem 1rem 1rem;
+
+    .footerContent {
+      gap: 2rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .footerSection {
+      .subscribe {
+        flex-direction: column;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .contentContainer {
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .hero {
+    h1 {
+      font-size: 2rem;
+    }
+
+    p {
+      font-size: 1.1rem;
+    }
+  }
+
+  .services, .destinations, .about {
+    padding: 2rem 0;
+  }
+
+  .flightGrid {
+    gap: 0.75rem;
+    padding: 0;
+  }
+}            

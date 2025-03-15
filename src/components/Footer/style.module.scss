@@ -1,0 +1,149 @@
+.footer {
+  background: #1e293b;
+  color: white;
+  padding: 4rem 0 2rem;
+
+  @media (min-width: 1024px) {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+
+  @media (max-width: 1023px) {
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &.thin {
+    padding: 0;
+    border-top: 1px solid #334155;
+    background: #1e293b;
+
+    .copyright {
+      text-align: center;
+      color: #64748b;
+      padding: 1rem 0;
+      border-top: none;
+      font-size: 0.875rem;
+    }
+  }
+
+  .contentContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .footerContent {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .footerSection {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: white;
+    }
+
+    a {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      @media (hover: hover) {
+        &:hover {
+          color: white;
+        }
+      }
+    }
+
+    p {
+      color: #94a3b8;
+      margin: 0;
+    }
+  }
+
+  .subscribe {
+    display: flex;
+    gap: 0.5rem;
+
+    input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      background: #1e293b;
+      color: white;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &::placeholder {
+        color: #64748b;
+      }
+
+      &:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      @media (hover: hover) {
+        &:hover {
+          background: #2563eb;
+        }
+      }
+
+      &:active {
+        transform: scale(0.98);
+      }
+    }
+  }
+
+  .copyright {
+    text-align: center;
+    color: #64748b;
+    padding-top: 2rem;
+    border-top: 1px solid #334155;
+  }
+
+  @media (max-width: 768px) {
+    padding: 3rem 0 1.5rem;
+
+    &.thin {
+      padding: 0;
+
+      .copyright {
+        padding: 0.75rem 0;
+      }
+    }
+
+    .footerContent {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .subscribe {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+} 
