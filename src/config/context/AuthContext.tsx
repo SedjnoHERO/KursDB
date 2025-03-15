@@ -18,6 +18,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -28,6 +29,7 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,6 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (email && role) {
       setUser({ email, role: role as 'admin' | 'user' });
     }
+    setIsLoading(false);
   }, []);
 
   const login = (email: string, role: string) => {
@@ -69,6 +72,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     logout,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
+    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
