@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaUserCircle, FaPlane, FaBars, FaTimes } from 'react-icons/fa';
+import { FaPlane, FaBars, FaTimes } from 'react-icons/fa';
 import { EntityType } from '@api';
-import { useAuth } from '@config';
+import { ProfileButton } from '@components';
 import styles from './style.module.scss';
 
 interface MenuItem {
@@ -15,16 +14,13 @@ interface IHeaderProps {
   activeType?: EntityType;
   onTypeChange?: (type: EntityType) => void;
 }
+
 interface IAdminHeaderProps {
   activeType: EntityType;
   onTypeChange: (type: EntityType) => void;
 }
 
 const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-
   const menuItems: MenuItem[] = [
     { type: 'PASSENGER', label: 'Пассажиры' },
     { type: 'TICKET', label: 'Билеты' },
@@ -33,10 +29,6 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
     { type: 'AIRLINE', label: 'Авиакомпании' },
     { type: 'AIRPORT', label: 'Аэропорты' },
   ];
-
-  const handleProfileClick = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen);
-  };
 
   return (
     <div className={styles.headerContent}>
@@ -52,33 +44,14 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
           </div>
         ))}
       </nav>
-      <div className={styles.profileContainer}>
-        <button className={styles.profileButton} onClick={handleProfileClick}>
-          <FaUserCircle size={24} />
-        </button>
-        {isProfileMenuOpen && (
-          <div className={styles.profileMenu}>
-            <div className={styles.userInfo}>
-              <span>{user?.email}</span>
-              <span className={styles.role}>
-                {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
-              </span>
-            </div>
-            <button onClick={() => navigate('/profile')}>Профиль</button>
-            <button onClick={logout}>Выйти</button>
-          </div>
-        )}
-      </div>
+      <ProfileButton variant="admin" />
     </div>
   );
 };
 
 const DefaultHeader = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -139,10 +112,6 @@ const DefaultHeader = () => {
     }
   };
 
-  const handleProfileClick = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen);
-  };
-
   return (
     <nav
       className={`${styles.defaultNav} ${isScrolled ? styles.scrolled : ''}`}
@@ -171,45 +140,7 @@ const DefaultHeader = () => {
           <a href="#about" onClick={scrollToSection('about')}>
             О нас
           </a>
-          {isAuthenticated ? (
-            <div className={styles.profileContainer}>
-              <button
-                className={styles.profileButton}
-                onClick={handleProfileClick}
-              >
-                <FaUserCircle size={24} />
-              </button>
-              {isProfileMenuOpen && (
-                <div className={styles.profileMenu}>
-                  <div className={styles.userInfo}>
-                    <span>{user?.email}</span>
-                    <span className={styles.role}>
-                      {user?.role === 'admin'
-                        ? 'Администратор'
-                        : 'Пользователь'}
-                    </span>
-                  </div>
-                  <button onClick={() => navigate('/profile')}>Профиль</button>
-                  {user?.role === 'admin' && (
-                    <button onClick={() => navigate('/admin')}>
-                      Админ панель
-                    </button>
-                  )}
-                  <button onClick={logout}>Выйти</button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              className={styles.authButton}
-              onClick={() => {
-                closeMobileMenu();
-                navigate('/auth');
-              }}
-            >
-              Войти
-            </button>
-          )}
+          <ProfileButton variant="default" />
         </div>
       </div>
     </nav>
@@ -217,10 +148,7 @@ const DefaultHeader = () => {
 };
 
 const MinimalHeader = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -233,10 +161,6 @@ const MinimalHeader = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleProfileClick = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen);
-  };
-
   return (
     <nav
       className={`${styles.defaultNav} ${isScrolled ? styles.scrolled : ''}`}
@@ -247,49 +171,18 @@ const MinimalHeader = () => {
           AeroControl
         </a>
         <div className={styles.navLinks}>
-          {isAuthenticated ? (
-            <div className={styles.profileContainer}>
-              <button
-                className={styles.profileButton}
-                onClick={handleProfileClick}
-              >
-                <FaUserCircle size={24} />
-              </button>
-              {isProfileMenuOpen && (
-                <div className={styles.profileMenu}>
-                  <div className={styles.userInfo}>
-                    <span>{user?.email}</span>
-                    <span className={styles.role}>
-                      {user?.role === 'admin'
-                        ? 'Администратор'
-                        : 'Пользователь'}
-                    </span>
-                  </div>
-                  <button onClick={() => navigate('/profile')}>Профиль</button>
-                  {user?.role === 'admin' && (
-                    <button onClick={() => navigate('/admin')}>
-                      Админ панель
-                    </button>
-                  )}
-                  <button onClick={logout}>Выйти</button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              className={styles.authButton}
-              onClick={() => navigate('/auth')}
-            >
-              Войти
-            </button>
-          )}
+          <ProfileButton variant="minimal" />
         </div>
       </div>
     </nav>
   );
 };
 
-export const Header = ({ type, activeType, onTypeChange }: IHeaderProps) => {
+export const Header = ({
+  type = 'default',
+  activeType,
+  onTypeChange,
+}: IHeaderProps) => {
   return (
     <header
       className={`${styles.header} ${type === 'admin' ? styles.adminHeader : ''}`}
