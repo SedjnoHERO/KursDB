@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '@modules';
 import { FaEnvelope, FaUser, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 import { toast } from 'sonner';
+import { Supabase } from '@api';
+import { useAuth } from '@config';
 import styles from './style.module.scss';
 
 interface UserData {
@@ -11,6 +13,7 @@ interface UserData {
   lastName?: string;
   phone?: string;
   address?: string;
+  role?: 'admin' | 'user';
 }
 
 export const Auth = () => {
@@ -21,9 +24,11 @@ export const Auth = () => {
     lastName: '',
     phone: '',
     address: '',
+    role: 'user',
   });
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,15 +39,26 @@ export const Auth = () => {
     }
 
     try {
-      const isExistingUser = false;
+      const { data, error } = await Supabase.from('PASSENGER')
+        .select('Email, Role')
+        .eq('Email', userData.email)
+        .single();
 
-      if (isExistingUser) {
-        navigate('/profile');
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // Пользователь существует
+        login(userData.email, data.Role);
+        toast.success('Вход выполнен успешно');
       } else {
+        // Пользователь не существует
         setStep('registration');
       }
     } catch (error) {
-      toast.error('Произошла ошибка при проверке email');
+      console.error('Ошибка при проверке email:', error);
+      setStep('registration');
     }
   };
 
@@ -60,11 +76,23 @@ export const Auth = () => {
     }
 
     try {
-      // Здесь будет отправка данных в API
-      console.log('Регистрация:', userData);
+      const { error } = await Supabase.from('PASSENGER').insert([
+        {
+          Email: userData.email,
+          FirstName: userData.firstName,
+          LastName: userData.lastName,
+          Phone: userData.phone,
+          Address: userData.address || null,
+          Role: 'user',
+        },
+      ]);
+
+      if (error) throw error;
+
+      login(userData.email, 'user');
       toast.success('Регистрация успешна');
-      navigate('/profile');
     } catch (error) {
+      console.error('Ошибка при регистрации:', error);
       toast.error('Произошла ошибка при регистрации');
     }
   };
@@ -75,7 +103,7 @@ export const Auth = () => {
   };
 
   return (
-    <Layout>
+    <Layout headerType="minimal">
       <div className={styles.authPage}>
         <div className={styles.formContainer}>
           {step === 'email' ? (

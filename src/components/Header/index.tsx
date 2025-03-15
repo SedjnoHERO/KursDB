@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaPlane, FaBars, FaTimes } from 'react-icons/fa';
 import { EntityType } from '@api';
+import { useAuth } from '@config';
 import styles from './style.module.scss';
 
 interface MenuItem {
@@ -52,8 +53,10 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
 
 const DefaultHeader = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -114,6 +117,10 @@ const DefaultHeader = () => {
     }
   };
 
+  const handleProfileClick = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen);
+  };
+
   return (
     <nav
       className={`${styles.defaultNav} ${isScrolled ? styles.scrolled : ''}`}
@@ -142,15 +149,45 @@ const DefaultHeader = () => {
           <a href="#about" onClick={scrollToSection('about')}>
             О нас
           </a>
-          <button
-            className={styles.authButton}
-            onClick={() => {
-              closeMobileMenu();
-              navigate('/auth');
-            }}
-          >
-            Войти
-          </button>
+          {isAuthenticated ? (
+            <div className={styles.profileContainer}>
+              <button
+                className={styles.profileButton}
+                onClick={handleProfileClick}
+              >
+                <FaUserCircle size={24} />
+              </button>
+              {isProfileMenuOpen && (
+                <div className={styles.profileMenu}>
+                  <div className={styles.userInfo}>
+                    <span>{user?.email}</span>
+                    <span className={styles.role}>
+                      {user?.role === 'admin'
+                        ? 'Администратор'
+                        : 'Пользователь'}
+                    </span>
+                  </div>
+                  <button onClick={() => navigate('/profile')}>Профиль</button>
+                  {user?.role === 'admin' && (
+                    <button onClick={() => navigate('/admin')}>
+                      Админ панель
+                    </button>
+                  )}
+                  <button onClick={logout}>Выйти</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className={styles.authButton}
+              onClick={() => {
+                closeMobileMenu();
+                navigate('/auth');
+              }}
+            >
+              Войти
+            </button>
+          )}
         </div>
       </div>
     </nav>

@@ -18,6 +18,7 @@ import {
   Navigate,
   Outlet,
 } from 'react-router-dom';
+import { AuthProvider, ProtectedRoute } from '@config';
 import './registerSW';
 import '@styles/global.scss';
 
@@ -33,14 +34,41 @@ const App = () => {
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route element={<App />}>
+    <Route
+      element={
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      }
+    >
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
-      <Route path="/admin" element={<AdminPage />} />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/error" element={<ErrorPage />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/catalog" element={<Catalog />} />
-      <Route path="/ticket/:id" element={<TicketDetail />} />
+      <Route
+        path="/ticket/:id"
+        element={
+          <ProtectedRoute>
+            <TicketDetail />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/error" replace />} />
     </Route>,
   ),
