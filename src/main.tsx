@@ -20,7 +20,7 @@ import {
 } from 'react-router-dom';
 import { AuthProvider, ProtectedRoute } from '@config';
 import './registerSW';
-import '@styles/global.scss';
+// import '@styles/global.scss';
 
 const App = () => {
   const isOnline = useInternet();
