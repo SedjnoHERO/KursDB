@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ErrorPage,
@@ -17,10 +17,22 @@ import {
   Route,
   Navigate,
   Outlet,
+  useLocation,
 } from 'react-router-dom';
 import { AuthProvider, ProtectedRoute } from '@config';
 import './registerSW';
 // import '@styles/global.scss';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }, [pathname]);
+
+  return null;
+};
 
 const App = () => {
   const isOnline = useInternet();
@@ -29,7 +41,12 @@ const App = () => {
     return <ErrorPage />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <ScrollToTop />
+      <Outlet />
+    </>
+  );
 };
 
 const router = createBrowserRouter(
@@ -73,6 +90,13 @@ const router = createBrowserRouter(
     </Route>,
   ),
 );
+
+// Добавляем глобальный обработчик прокрутки
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', () => {
+    window.scrollTo(0, 0);
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -84,11 +84,15 @@ export const ProfileButton = ({ variant = 'default' }: ProfileButtonProps) => {
               {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
             </span>
           </div>
-          <button onClick={() => handleNavigate('/profile')}>Профиль</button>
-          {user?.role === 'admin' && (
-            <button onClick={() => handleNavigate('/admin')}>
-              Админ панель
-            </button>
+          {user?.role === 'admin' ? (
+            <>
+              <button onClick={() => handleNavigate('/')}>Главный экран</button>
+              <button onClick={() => handleNavigate('/admin')}>
+                Админ панель
+              </button>
+            </>
+          ) : (
+            <button onClick={() => handleNavigate('/profile')}>Профиль</button>
           )}
           <button onClick={handleLogout}>Выйти</button>
         </div>
