@@ -67,6 +67,47 @@
           }
         }
   
+        .profileContainer {
+          margin-left: 24px;
+  
+          .profileButton {
+            color: white;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            cursor: pointer;
+            
+            @media (hover: hover) {
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
+  
+          .profileMenu {
+            background: white;
+            margin-top: 1rem;
+            right: 0;
+  
+            .userInfo {
+              span {
+                color: var(--text-color);
+                
+                &.role {
+                  color: var(--text-color-light);
+                }
+              }
+            }
+  
+            button {
+              color: var(--text-color);
+              
+              &:hover {
+                background-color: var(--background-color-light);
+              }
+            }
+          }
+        }
+  
         .userInfo {
           color: white;
           opacity: 0.8;

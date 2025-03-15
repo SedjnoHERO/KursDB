@@ -21,6 +21,10 @@ interface IAdminHeaderProps {
 }
 
 const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
   const menuItems: MenuItem[] = [
     { type: 'PASSENGER', label: 'Пассажиры' },
     { type: 'TICKET', label: 'Билеты' },
@@ -29,6 +33,10 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
     { type: 'AIRLINE', label: 'Авиакомпании' },
     { type: 'AIRPORT', label: 'Аэропорты' },
   ];
+
+  const handleProfileClick = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen);
+  };
 
   return (
     <div className={styles.headerContent}>
@@ -44,8 +52,22 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
           </div>
         ))}
       </nav>
-      <div className={styles.userInfo}>
-        <FaUserCircle size={20} />
+      <div className={styles.profileContainer}>
+        <button className={styles.profileButton} onClick={handleProfileClick}>
+          <FaUserCircle size={24} />
+        </button>
+        {isProfileMenuOpen && (
+          <div className={styles.profileMenu}>
+            <div className={styles.userInfo}>
+              <span>{user?.email}</span>
+              <span className={styles.role}>
+                {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
+              </span>
+            </div>
+            <button onClick={() => navigate('/profile')}>Профиль</button>
+            <button onClick={logout}>Выйти</button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -196,7 +218,9 @@ const DefaultHeader = () => {
 
 const MinimalHeader = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -209,6 +233,10 @@ const MinimalHeader = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleProfileClick = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen);
+  };
+
   return (
     <nav
       className={`${styles.defaultNav} ${isScrolled ? styles.scrolled : ''}`}
@@ -219,12 +247,42 @@ const MinimalHeader = () => {
           AeroControl
         </a>
         <div className={styles.navLinks}>
-          <button
-            className={styles.authButton}
-            onClick={() => navigate('/auth')}
-          >
-            Войти
-          </button>
+          {isAuthenticated ? (
+            <div className={styles.profileContainer}>
+              <button
+                className={styles.profileButton}
+                onClick={handleProfileClick}
+              >
+                <FaUserCircle size={24} />
+              </button>
+              {isProfileMenuOpen && (
+                <div className={styles.profileMenu}>
+                  <div className={styles.userInfo}>
+                    <span>{user?.email}</span>
+                    <span className={styles.role}>
+                      {user?.role === 'admin'
+                        ? 'Администратор'
+                        : 'Пользователь'}
+                    </span>
+                  </div>
+                  <button onClick={() => navigate('/profile')}>Профиль</button>
+                  {user?.role === 'admin' && (
+                    <button onClick={() => navigate('/admin')}>
+                      Админ панель
+                    </button>
+                  )}
+                  <button onClick={logout}>Выйти</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className={styles.authButton}
+              onClick={() => navigate('/auth')}
+            >
+              Войти
+            </button>
+          )}
         </div>
       </div>
     </nav>
