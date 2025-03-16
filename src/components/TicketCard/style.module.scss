@@ -1,0 +1,163 @@
+.ticketCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #2563eb;
+    opacity: 0.5;
+  }
+
+  &.cancelled::before {
+    background-color: #ef4444;
+  }
+
+  &.paid::before {
+    background-color: #10b981;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .ticketInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+
+    .route {
+      h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1.125rem;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        svg {
+          color: #2563eb;
+          font-size: 1rem;
+        }
+      }
+
+      p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        svg {
+          color: #9ca3af;
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    .price {
+      text-align: right;
+
+      p {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2563eb;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+
+        svg {
+          font-size: 0.875rem;
+        }
+
+        &.booked {
+          background-color: #fef3c7;
+          color: #92400e;
+        }
+
+        &.paid {
+          background-color: #d1fae5;
+          color: #065f46;
+        }
+
+        &.cancelled {
+          background-color: #fee2e2;
+          color: #991b1b;
+        }
+      }
+    }
+  }
+
+  .ticketActions {
+    display: flex;
+    gap: 0.75rem;
+
+    button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.payButton {
+        background-color: #2563eb;
+        color: white;
+
+        @media (hover: hover) {
+          &:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+          }
+        }
+      }
+
+      &.cancelButton {
+        background-color: #ef4444;
+        color: white;
+
+        @media (hover: hover) {
+          &:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+          }
+        }
+      }
+
+      svg {
+        font-size: 1rem;
+      }
+    }
+  }
+} 

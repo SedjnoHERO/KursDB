@@ -9,3 +9,4 @@ export { Header } from './Header';
 export { Footer } from './Footer';
 export { FlightCard } from './FlightCard';
 export { ProfileButton } from './ProfileButton';
+export { TicketCard } from './TicketCard';
