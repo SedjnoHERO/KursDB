@@ -22,7 +22,6 @@ interface IAdminHeaderProps {
 }
 
 const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuItems: MenuItem[] = [
     { type: 'PASSENGER', label: 'Пассажиры' },
     { type: 'TICKET', label: 'Билеты' },
@@ -36,10 +35,6 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
     window.location.reload();
   };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
   return (
     <div className={styles.headerContent}>
       <span
@@ -48,7 +43,7 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
         style={{ cursor: 'pointer' }}
       >
         AeroControl
-      </span>
+      </span>{' '}
       <nav className={styles.nav}>
         {menuItems.map(item => (
           <div
@@ -60,33 +55,7 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
           </div>
         ))}
       </nav>
-      <div className={styles.rightSection}>
-        <ProfileButton variant="admin" />
-        <button
-          className={styles.mobileMenuButton}
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-        </button>
-      </div>
-
-      <div
-        className={`${styles.mobileMenu} ${isMobileMenuOpen ? styles.open : ''}`}
-      >
-        {menuItems.map(item => (
-          <div
-            key={item.type}
-            className={`${activeType === item.type ? styles.active : ''}`}
-            onClick={() => {
-              onTypeChange(item.type);
-              setIsMobileMenuOpen(false);
-            }}
-          >
-            {item.label}
-          </div>
-        ))}
-      </div>
+      <ProfileButton variant="admin" />
     </div>
   );
 };
