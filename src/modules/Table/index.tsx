@@ -20,6 +20,8 @@ import {
   VALUE_TRANSLATIONS,
   TABLE_FILTERS,
   FilterConfig,
+  Tooltip,
+  getFieldTooltip,
 } from '@config';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
@@ -61,6 +63,10 @@ export const TableComponent = ({ type }: ITableProps) => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
   const [rangeFilters, setRangeFilters] = useState<Record<string, boolean>>({});
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const currentTypeRef = useRef(type);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -572,6 +578,39 @@ export const TableComponent = ({ type }: ITableProps) => {
           column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
         ] || column;
 
+      const tooltipContent = getFieldTooltip(column, type);
+
+      const getFieldHint = (field: string) => {
+        switch (field) {
+          case 'FirstName':
+          case 'LastName':
+            return 'Только буквы, пробелы и дефисы';
+          case 'Email':
+            return 'Например: user@example.com';
+          case 'Phone':
+            return 'Например: +375291234567';
+          case 'PassportSeries':
+            return '2 заглавные буквы';
+          case 'PassportNumber':
+            return '7 цифр';
+          case 'FlightNumber':
+            return 'Например: AA123 (2 буквы + 3-4 цифры)';
+          case 'Capacity':
+            return 'От 5 до 555 пассажиров';
+          case 'Price':
+            return 'Минимальная цена: 0 BYN';
+          case 'DateOfBirth':
+            return 'Возраст от 2 до 90 лет';
+          case 'DepartureTime':
+          case 'ArrivalTime':
+            return 'Длительность полета не более 24 часов';
+          case 'PurchaseDate':
+            return 'Не более года назад';
+          default:
+            return '';
+        }
+      };
+
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { value } = e.target;
 
@@ -676,7 +715,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Gender') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={genderOptions}
               value={formData[column]}
@@ -689,7 +731,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Role') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={roleOptions}
               value={formData[column]}
@@ -702,7 +747,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Status') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={statusOptions}
               value={formData[column]}
@@ -720,7 +768,10 @@ export const TableComponent = ({ type }: ITableProps) => {
 
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <input
               type="date"
               value={formData[column]?.split('T')[0] || ''}
@@ -753,7 +804,10 @@ export const TableComponent = ({ type }: ITableProps) => {
 
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <input
               type="datetime-local"
               value={formData[column] || ''}
@@ -769,7 +823,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Capacity') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <input
               type="number"
               value={formData[column] || ''}
@@ -785,7 +842,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'FlightID') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={Object.entries(relatedData.flights).map(
                 ([id, number]) => ({
@@ -803,7 +863,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'AirplaneID') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={Object.entries(relatedData.airplanes).map(
                 ([id, model]) => ({
@@ -821,7 +884,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'DepartureAirportID' || column === 'ArrivalAirportID') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={Object.entries(relatedData.airports).map(
                 ([id, name]) => ({
@@ -839,7 +905,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'AirlineID') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={Object.entries(relatedData.airlines).map(
                 ([id, name]) => ({
@@ -857,7 +926,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'PassengerID' && type === 'TICKET') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={Object.entries(relatedData.passengers).map(
                 ([id, name]) => ({
@@ -874,7 +946,10 @@ export const TableComponent = ({ type }: ITableProps) => {
 
       return (
         <div key={`field-${column}`} className={styles.field}>
-          <label>{columnLabel}</label>
+          <label>
+            {columnLabel}
+            <Tooltip content={tooltipContent} />
+          </label>
           <input
             type="text"
             value={formData[column] || ''}
