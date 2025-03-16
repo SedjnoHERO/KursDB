@@ -1,0 +1,180 @@
+.profileContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profileButton {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: white;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.profileMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem;
+  min-width: 200px;
+  z-index: 1000;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    border-radius: 12px 12px 0 0;
+    min-width: auto;
+  }
+
+  .userInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #eee;
+
+    span {
+      font-size: 0.95rem;
+      color: #333;
+
+      &.role {
+        color: #666;
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  button {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: #333;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    @media (hover: hover) {
+      &:hover {
+        background-color: #f5f5f5;
+      }
+    }
+
+    &:not(:last-child) {
+      margin-bottom: 0.25rem;
+    }
+
+    &:last-child {
+      margin-top: 0.25rem;
+      color: #ef4444;
+
+      @media (hover: hover) {
+        &:hover {
+          background-color: #fee2e2;
+        }
+      }
+    }
+  }
+}
+
+.authButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  @media (hover: hover) {
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  &:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+// Варианты стилей
+.admin {
+  .profileButton {
+    color: white;
+  }
+
+  .authButton {
+    background: var(--primary-color);
+    border: 1px solid var(--border-color);
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--primary-dark);
+      }
+    }
+  }
+}
+
+.default {
+  .profileButton {
+    color: white;
+  }
+
+  .authButton {
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+
+    @media (hover: hover) {
+      &:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+}
+
+.minimal {
+  .profileButton {
+    color: white;
+  }
+
+  .authButton {
+    background: var(--primary-color);
+    border: 1px solid var(--border-color);
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(--primary-dark);
+      }
+    }
+  }
+} 

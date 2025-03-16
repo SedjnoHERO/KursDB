@@ -7,4 +7,5 @@ export { RangeSelector } from './RangeSelector';
 export { Selector } from './Selector';
 export { Header } from './Header';
 export { Footer } from './Footer';
-export * from './FlightCard';
+export { FlightCard } from './FlightCard';
+export { ProfileButton } from './ProfileButton';

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaUserCircle, FaPlane, FaBars, FaTimes } from 'react-icons/fa';
+import { FaPlane, FaBars, FaTimes } from 'react-icons/fa';
 import { EntityType } from '@api';
+import { ProfileButton } from '../ProfileButton';
 import styles from './style.module.scss';
 
 interface MenuItem {
@@ -10,10 +10,11 @@ interface MenuItem {
 }
 
 interface IHeaderProps {
-  type: 'default' | 'admin';
+  type: 'default' | 'admin' | 'minimal';
   activeType?: EntityType;
   onTypeChange?: (type: EntityType) => void;
 }
+
 interface IAdminHeaderProps {
   activeType: EntityType;
   onTypeChange: (type: EntityType) => void;
@@ -29,9 +30,19 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
     { type: 'AIRPORT', label: 'Аэропорты' },
   ];
 
+  const handleLogoClick = () => {
+    window.location.reload();
+  };
+
   return (
     <div className={styles.headerContent}>
-      <span className={styles.logo}>AeroControl</span>
+      <span
+        className={styles.logo}
+        onClick={handleLogoClick}
+        style={{ cursor: 'pointer' }}
+      >
+        AeroControl
+      </span>{' '}
       <nav className={styles.nav}>
         {menuItems.map(item => (
           <div
@@ -43,15 +54,12 @@ const AdminHeader = ({ activeType, onTypeChange }: IAdminHeaderProps) => {
           </div>
         ))}
       </nav>
-      <div className={styles.userInfo}>
-        <FaUserCircle size={20} />
-      </div>
+      <ProfileButton variant="admin" />
     </div>
   );
 };
 
 const DefaultHeader = () => {
-  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -67,49 +75,34 @@ const DefaultHeader = () => {
   }, []);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
 
-    const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        if (window.innerWidth <= 768 && isMobileMenuOpen) {
-          setIsMobileMenuOpen(false);
-        }
-      }, 150);
-    };
-
-    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
+      document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-    document.body.style.overflow = !isMobileMenuOpen ? 'hidden' : '';
   };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    document.body.style.overflow = '';
   };
 
   const scrollToSection = (sectionId: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     const section = document.getElementById(sectionId);
     if (section) {
-      const navHeight =
-        document.querySelector(`.${styles.nav}`)?.getBoundingClientRect()
-          .height || 0;
-      const offset =
-        section.getBoundingClientRect().top + window.scrollY - navHeight;
-
+      const offset = section.offsetTop - 80;
       window.scrollTo({
         top: offset,
         behavior: 'smooth',
       });
-
       closeMobileMenu();
     }
   };
@@ -126,7 +119,7 @@ const DefaultHeader = () => {
         <button
           className={styles.mobileMenuButton}
           onClick={toggleMobileMenu}
-          aria-label="Меню"
+          aria-label={isMobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
         >
           {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
         </button>
@@ -142,16 +135,37 @@ const DefaultHeader = () => {
           <a href="#about" onClick={scrollToSection('about')}>
             О нас
           </a>
-          <button
-            className={styles.authButton}
-            onClick={() => {
-              closeMobileMenu();
-              navigate('/auth');
-            }}
-          >
-            Войти
-          </button>
+          <ProfileButton variant="default" />
         </div>
+      </div>
+    </nav>
+  );
+};
+
+const MinimalHeader = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav
+      className={`${styles.defaultNav} ${styles.minimal} ${isScrolled ? styles.scrolled : ''}`}
+    >
+      <div className={styles.contentContainer}>
+        <a href="/" className={styles.logo}>
+          <FaPlane />
+          AeroControl
+        </a>
+        <ProfileButton variant="minimal" />
       </div>
     </nav>
   );
@@ -168,11 +182,13 @@ export const Header = ({
     >
       {type === 'default' ? (
         <DefaultHeader />
-      ) : (
+      ) : type === 'admin' ? (
         <AdminHeader
           activeType={activeType || 'PASSENGER'}
           onTypeChange={onTypeChange || (() => {})}
         />
+      ) : (
+        <MinimalHeader />
       )}
     </header>
   );

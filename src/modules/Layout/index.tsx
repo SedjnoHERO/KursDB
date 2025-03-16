@@ -1,13 +1,13 @@
 import { FC, ReactNode } from 'react';
 import { Footer } from '@components';
-import { Header } from '@modules';
+import { Header, Screen } from '@components';
 import { EntityType } from '@api';
 
 import styles from './style.module.scss';
 
 interface LayoutProps {
   children: ReactNode;
-  headerType?: 'default' | 'admin';
+  headerType?: 'default' | 'admin' | 'minimal';
   footerType?: 'default' | 'thin';
   activeType?: EntityType;
   onTypeChange?: (type: EntityType) => void;
@@ -15,8 +15,8 @@ interface LayoutProps {
 
 export const Layout: FC<LayoutProps> = ({
   children,
-  headerType = 'default',
-  footerType = 'default',
+  headerType = 'minimal',
+  footerType = 'thin',
   activeType,
   onTypeChange,
 }) => {
@@ -27,7 +27,7 @@ export const Layout: FC<LayoutProps> = ({
         activeType={activeType}
         onTypeChange={onTypeChange}
       />
-      <main className={styles.main}>{children}</main>
+      <Screen>{children}</Screen>
       <Footer type={footerType} />
     </div>
   );

@@ -1,16 +1,30 @@
-@import '@theme/colors';
-@import '@theme/spacing';
+@import '@theme';
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-primary);
+}
+
+body {
+  background-color: var(--background-primary);
+}
 
 .container {
-  background-color: var(--background-primary);
+  min-height: 100%;
   font-family: var(--font-family);
-  padding-top: 64px;
+  padding-top: 100px;
+  display: flex;
+  flex-direction: column;
 }
 
 .content {
+  flex: 1;
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
+  width: 100%;
 }
 
 .buttonContainer {

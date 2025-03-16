@@ -130,7 +130,7 @@ export const Home = () => {
   };
 
   return (
-    <Layout headerType="default">
+    <Layout headerType="default" footerType="default">
       <div className={styles.container}>
         <div className={styles.hero}>
           <h1>Найдите идеальный рейс</h1>
