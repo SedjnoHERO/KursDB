@@ -147,7 +147,7 @@ const MinimalHeader = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 0);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -158,16 +158,14 @@ const MinimalHeader = () => {
 
   return (
     <nav
-      className={`${styles.defaultNav} ${isScrolled ? styles.scrolled : ''}`}
+      className={`${styles.defaultNav} ${styles.minimal} ${isScrolled ? styles.scrolled : ''}`}
     >
       <div className={styles.contentContainer}>
         <a href="/" className={styles.logo}>
           <FaPlane />
           AeroControl
         </a>
-        <div className={styles.navLinks}>
-          <ProfileButton variant="minimal" />
-        </div>
+        <ProfileButton variant="minimal" />
       </div>
     </nav>
   );
