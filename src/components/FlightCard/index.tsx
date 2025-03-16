@@ -8,6 +8,7 @@ interface FlightCardProps {
   limit?: number;
   offset?: number;
   onTotalCountUpdate?: (count: number) => void;
+  flights?: Flight[];
 }
 
 interface Flight {
@@ -72,13 +73,19 @@ export const FlightCard = ({
   amount = 3,
   offset = 0,
   onTotalCountUpdate,
+  flights: providedFlights,
 }: FlightCardProps) => {
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!providedFlights);
 
   useEffect(() => {
+    if (providedFlights) {
+      setFlights(providedFlights);
+      setIsLoading(false);
+      return;
+    }
     fetchFlights();
-  }, [limit, offset]);
+  }, [limit, offset, providedFlights]);
 
   const fetchFlights = async () => {
     try {

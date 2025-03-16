@@ -80,25 +80,18 @@ const MobileMenu: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
         Главная
       </Link>
       <Link
-        to="/flights"
-        className={location.pathname === '/flights' ? styles.active : ''}
+        to="/catalog"
+        className={location.pathname === '/catalog' ? styles.active : ''}
         onClick={handleLinkClick}
       >
         Рейсы
       </Link>
       <Link
-        to="/about"
-        className={location.pathname === '/about' ? styles.active : ''}
+        to="/profile"
+        className={location.pathname === '/profile' ? styles.active : ''}
         onClick={handleLinkClick}
       >
-        О нас
-      </Link>
-      <Link
-        to="/contact"
-        className={location.pathname === '/contact' ? styles.active : ''}
-        onClick={handleLinkClick}
-      >
-        Контакты
+        Профиль
       </Link>
     </div>
   );
@@ -162,22 +155,16 @@ const DefaultHeader = () => {
             Главная
           </Link>
           <Link
-            to="/flights"
-            className={location.pathname === '/flights' ? styles.active : ''}
+            to="/catalog"
+            className={location.pathname === '/catalog' ? styles.active : ''}
           >
             Рейсы
           </Link>
           <Link
-            to="/about"
-            className={location.pathname === '/about' ? styles.active : ''}
+            to="/profile"
+            className={location.pathname === '/profile' ? styles.active : ''}
           >
-            О нас
-          </Link>
-          <Link
-            to="/contact"
-            className={location.pathname === '/contact' ? styles.active : ''}
-          >
-            Контакты
+            Профиль
           </Link>
         </div>
 

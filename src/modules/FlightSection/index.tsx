@@ -6,12 +6,27 @@ import styles from './style.module.scss';
 interface FlightSectionProps {
   title?: string;
   type?: 'popular' | 'all';
+  flights?: {
+    id: number;
+    from: string;
+    to: string;
+    date: string;
+    time: string;
+    price: number;
+    airline: string;
+    aircraft: string;
+  }[];
+  showBookButton?: boolean;
 }
 
-export const FlightSection = ({ title, type }: FlightSectionProps) => {
+export const FlightSection = ({
+  title,
+  type,
+  flights,
+  showBookButton,
+}: FlightSectionProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 6;
 
   useEffect(() => {
@@ -25,11 +40,13 @@ export const FlightSection = ({ title, type }: FlightSectionProps) => {
   }, []);
 
   const effectiveLimit = type === 'popular' && isMobile ? 3 : itemsPerPage;
+  const totalItems = flights?.length || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  const handleTotalCountUpdate = (count: number) => {
-    setTotalItems(count);
-  };
+  const paginatedFlights = flights?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   const renderPagination = () => {
     if (type === 'popular' || totalPages <= 1) return null;
@@ -68,8 +85,17 @@ export const FlightSection = ({ title, type }: FlightSectionProps) => {
       {title && <h2 className={styles.title}>{title}</h2>}
       <FlightCard
         limit={effectiveLimit}
-        offset={type === 'popular' ? 0 : (currentPage - 1) * itemsPerPage}
-        onTotalCountUpdate={handleTotalCountUpdate}
+        offset={0}
+        flights={paginatedFlights?.map(flight => ({
+          id: flight.id,
+          departure_city: flight.from,
+          arrival_city: flight.to,
+          departure_time: `${flight.date} ${flight.time}`,
+          arrival_time: flight.date,
+          price: flight.price,
+          airline_name: flight.airline,
+          aircraft_name: flight.aircraft,
+        }))}
       />
 
       {type === 'popular' && (
