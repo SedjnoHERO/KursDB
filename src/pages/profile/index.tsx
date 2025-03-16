@@ -6,12 +6,20 @@ import {
   FaEdit,
   FaCreditCard,
   FaTimes,
+  FaPlane,
+  FaCalendarAlt,
+  FaClock,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaHourglassHalf,
 } from 'react-icons/fa';
 import { useAuth } from '@config';
 import { TableAPI } from '@api';
 import { Supabase } from '@api';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
+import { Link } from 'react-router-dom';
+import { TicketCard } from '@components';
 
 interface UserProfile {
   PassengerID?: number;
@@ -64,6 +72,18 @@ interface TicketCardProps {
 interface TicketsListProps {
   tickets: Ticket[];
   onTicketAction: (ticketId: string, action: 'pay' | 'cancel') => void;
+}
+
+interface TicketResponse {
+  TicketID: number;
+  Status: string;
+  Price: number;
+  FLIGHT: {
+    FlightID: number;
+    DepartureTime: string;
+    DepartureAirport: { City: string };
+    ArrivalAirport: { City: string };
+  };
 }
 
 const ProfileHeader = ({ isEditing, onEditClick }: ProfileHeaderProps) => (
@@ -164,42 +184,14 @@ const InfoField = ({
   </div>
 );
 
-const TicketCard = ({ ticket, onAction }: TicketCardProps) => (
-  <div className={styles.ticketCard}>
-    <div className={styles.ticketInfo}>
-      <div className={styles.route}>
-        <h3>
-          {ticket.from} → {ticket.to}
-        </h3>
-        <p>
-          {ticket.date} в {ticket.time}
-        </p>
-      </div>
-      <div className={styles.price}>
-        <p>{ticket.price} ₽</p>
-        <span className={styles[ticket.status]}>
-          {ticket.status === 'booked' && 'Забронирован'}
-          {ticket.status === 'paid' && 'Оплачен'}
-          {ticket.status === 'cancelled' && 'Отменен'}
-        </span>
-      </div>
-    </div>
-    {ticket.status === 'booked' && (
-      <div className={styles.ticketActions}>
-        <button
-          className={styles.payButton}
-          onClick={() => onAction(ticket.id, 'pay')}
-        >
-          <FaCreditCard /> Оплатить
-        </button>
-        <button
-          className={styles.cancelButton}
-          onClick={() => onAction(ticket.id, 'cancel')}
-        >
-          <FaTimes /> Отменить
-        </button>
-      </div>
-    )}
+const EmptyTickets = () => (
+  <div className={styles.emptyTickets}>
+    <FaTicketAlt size={48} />
+    <h3>У вас пока нет билетов</h3>
+    <p>Выберите подходящий рейс из нашего каталога</p>
+    <Link to="/catalog" className={styles.catalogButton}>
+      <FaPlane /> Перейти в каталог
+    </Link>
   </div>
 );
 
@@ -209,9 +201,17 @@ const TicketsList = ({ tickets, onTicketAction }: TicketsListProps) => (
       <FaTicketAlt /> Мои билеты
     </h2>
     <div className={styles.ticketsList}>
-      {tickets.map(ticket => (
-        <TicketCard key={ticket.id} ticket={ticket} onAction={onTicketAction} />
-      ))}
+      {tickets.length > 0 ? (
+        tickets.map(ticket => (
+          <TicketCard
+            key={ticket.id}
+            ticket={ticket}
+            onAction={onTicketAction}
+          />
+        ))
+      ) : (
+        <EmptyTickets />
+      )}
     </div>
   </div>
 );
@@ -256,6 +256,63 @@ export const Profile = () => {
     fetchUserData();
   }, [user]);
 
+  useEffect(() => {
+    const fetchUserTickets = async () => {
+      if (!originalProfile?.PassengerID) return;
+
+      try {
+        const { data: tickets, error } = await Supabase.from('TICKET')
+          .select(
+            `
+            TicketID,
+            Status,
+            Price,
+            FLIGHT (
+              FlightID,
+              DepartureTime,
+              DepartureAirport:DepartureAirportID(City),
+              ArrivalAirport:ArrivalAirportID(City)
+            )
+          `,
+          )
+          .eq('PassengerID', originalProfile.PassengerID)
+          .returns<TicketResponse[]>();
+
+        if (error) throw error;
+
+        if (tickets) {
+          setTickets(
+            tickets.map(ticket => ({
+              id: ticket.TicketID.toString(),
+              from: ticket.FLIGHT.DepartureAirport.City,
+              to: ticket.FLIGHT.ArrivalAirport.City,
+              date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
+                'ru-RU',
+              ),
+              time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
+                'ru-RU',
+                {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                },
+              ),
+              price: ticket.Price,
+              status: ticket.Status.toLowerCase() as
+                | 'booked'
+                | 'paid'
+                | 'cancelled',
+            })),
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        toast.error('Ошибка при загрузке билетов');
+      }
+    };
+
+    fetchUserTickets();
+  }, [originalProfile]);
+
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({
@@ -298,14 +355,35 @@ export const Profile = () => {
     }
   };
 
-  const handleTicketAction = (ticketId: string, action: 'pay' | 'cancel') => {
-    setTickets(prev =>
-      prev.map(ticket =>
-        ticket.id === ticketId
-          ? { ...ticket, status: action === 'pay' ? 'paid' : 'cancelled' }
-          : ticket,
-      ),
-    );
+  const handleTicketAction = async (
+    ticketId: string,
+    action: 'pay' | 'cancel',
+  ) => {
+    try {
+      const { error } = await Supabase.from('TICKET')
+        .update({
+          Status: action === 'pay' ? 'paid' : 'cancelled',
+          PurchaseDate: action === 'pay' ? new Date().toISOString() : undefined,
+        })
+        .eq('TicketID', ticketId);
+
+      if (error) throw error;
+
+      setTickets(prev =>
+        prev.map(ticket =>
+          ticket.id === ticketId
+            ? { ...ticket, status: action === 'pay' ? 'paid' : 'cancelled' }
+            : ticket,
+        ),
+      );
+
+      toast.success(
+        action === 'pay' ? 'Билет успешно оплачен' : 'Бронирование отменено',
+      );
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      toast.error('Ошибка при обновлении билета');
+    }
   };
 
   if (!originalProfile) {

@@ -9,15 +9,15 @@ import {
 } from 'react-icons/fa';
 import { Layout } from '@modules';
 import { useAuth } from '@config';
-import { TableAPI } from '@api';
+import { TableAPI, Supabase } from '@api';
 import styles from './style.module.scss';
+import { toast } from 'sonner';
 
 interface BookingFormData {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  passengers: number;
 }
 
 interface TicketInfo {
@@ -31,6 +31,12 @@ interface TicketInfo {
   availableSeats: number;
   airline: string;
   aircraft: string;
+}
+
+interface FlightWithAirplane {
+  AIRPLANE: {
+    Capacity: number;
+  };
 }
 
 const formatPrice = (price: number) => {
@@ -169,22 +175,9 @@ const BookingForm = ({
         />
       </div>
 
-      <div className={styles.formGroup}>
-        <label>Количество пассажиров</label>
-        <input
-          type="number"
-          name="passengers"
-          min="1"
-          max={ticket.availableSeats}
-          value={formData.passengers}
-          onChange={onChange}
-          required
-        />
-      </div>
-
       <div className={styles.totalPrice}>
         <h3>Итого к оплате:</h3>
-        <p>{formatPrice(ticket.price * formData.passengers)}</p>
+        <p>{formatPrice(ticket.price)}</p>
       </div>
 
       <button type="submit" className={styles.submitButton}>
@@ -198,12 +191,12 @@ export const TicketDetail = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const [availableSeats, setAvailableSeats] = useState<number>(0);
   const [formData, setFormData] = useState<BookingFormData>({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    passengers: 1,
   });
 
   useEffect(() => {
@@ -231,6 +224,47 @@ export const TicketDetail = () => {
     fetchUserData();
   }, [user]);
 
+  useEffect(() => {
+    const fetchFlightData = async () => {
+      if (!id) return;
+
+      try {
+        // Получаем информацию о самолете и его вместимости
+        const { data: flightData } = await Supabase.from('FLIGHT')
+          .select(
+            `
+            AIRPLANE:AirplaneID (
+              Capacity
+            )
+          `,
+          )
+          .eq('FlightID', id)
+          .single<FlightWithAirplane>();
+
+        if (!flightData?.AIRPLANE?.Capacity) {
+          console.error(
+            'Не удалось получить информацию о вместимости самолета',
+          );
+          return;
+        }
+
+        // Получаем количество проданных билетов
+        const { data: soldTickets } = await Supabase.from('TICKET')
+          .select('TicketID')
+          .eq('FlightID', id)
+          .not('Status', 'eq', 'cancelled');
+
+        const totalCapacity = flightData.AIRPLANE.Capacity;
+        const soldSeats = soldTickets?.length || 0;
+        setAvailableSeats(totalCapacity - soldSeats);
+      } catch (error) {
+        console.error('Error fetching flight data:', error);
+      }
+    };
+
+    fetchFlightData();
+  }, [id]);
+
   const ticket: TicketInfo = {
     id: id,
     from: searchParams.get('from') || 'Не указан',
@@ -246,7 +280,7 @@ export const TicketDetail = () => {
     }),
     duration: '1ч 30м',
     price: Number(searchParams.get('price')) || 0,
-    availableSeats: 45,
+    availableSeats: availableSeats,
     airline: searchParams.get('airline') || 'Не указана',
     aircraft: searchParams.get('aircraft') || 'Не указан',
   };
@@ -259,9 +293,92 @@ export const TicketDetail = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Форма отправлена:', formData);
+
+    if (!user || !id) {
+      toast.error('Необходимо авторизоваться');
+      return;
+    }
+
+    try {
+      // Получаем данные пассажира
+      const { data: passenger } = await Supabase.from('PASSENGER')
+        .select('PassengerID')
+        .eq('Email', user.email)
+        .single();
+
+      if (!passenger) {
+        toast.error('Пассажир не найден');
+        return;
+      }
+
+      // Получаем информацию о занятых местах
+      const { data: existingTickets } = await Supabase.from('TICKET')
+        .select('SeatNumber')
+        .eq('FlightID', id)
+        .not('Status', 'eq', 'cancelled');
+
+      // Получаем вместимость самолета
+      const { data: flightData } = await Supabase.from('FLIGHT')
+        .select(
+          `
+          AIRPLANE:AirplaneID (
+            Capacity
+          )
+        `,
+        )
+        .eq('FlightID', id)
+        .single<FlightWithAirplane>();
+
+      if (!flightData?.AIRPLANE?.Capacity) {
+        toast.error('Не удалось получить информацию о рейсе');
+        return;
+      }
+
+      const capacity = flightData.AIRPLANE.Capacity;
+      const occupiedSeats = new Set(
+        existingTickets?.map(t => t.SeatNumber) || [],
+      );
+
+      // Находим первое свободное место
+      let seatNumber = '';
+      for (let i = 1; i <= capacity; i++) {
+        const seat = i.toString().padStart(2, '0');
+        if (!occupiedSeats.has(seat)) {
+          seatNumber = seat;
+          break;
+        }
+      }
+
+      if (!seatNumber) {
+        toast.error('Нет свободных мест на рейс');
+        return;
+      }
+
+      // Создаем новый билет
+      const { data: ticket, error } = await Supabase.from('TICKET')
+        .insert({
+          PassengerID: passenger.PassengerID,
+          FlightID: id,
+          Status: 'booked',
+          Price: Number(searchParams.get('price')) || 0,
+          PurchaseDate: new Date().toISOString(),
+          SeatNumber: seatNumber,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (ticket) {
+        toast.success('Билет успешно забронирован');
+        window.location.href = '/profile';
+      }
+    } catch (error) {
+      console.error('Error booking ticket:', error);
+      toast.error('Ошибка при бронировании билета');
+    }
   };
 
   return (
