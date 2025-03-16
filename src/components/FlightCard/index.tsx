@@ -162,7 +162,7 @@ export const FlightCard = ({
     <div className={`${styles.container} ${styles[`grid-${amount}`]}`}>
       {flights.map(flight => (
         <Link
-          to={`/ticket/${flight.id}`}
+          to={`/ticket/${flight.id}?from=${encodeURIComponent(flight.departure_city)}&to=${encodeURIComponent(flight.arrival_city)}&date=${encodeURIComponent(flight.departure_time)}&price=${flight.price}&airline=${encodeURIComponent(flight.airline_name)}&aircraft=${encodeURIComponent(flight.aircraft_name)}`}
           key={flight.id}
           className={styles.card}
         >
