@@ -3,6 +3,7 @@ import { FaMoneyBillWave, FaShieldAlt, FaHeadset } from 'react-icons/fa';
 import { TableAPI } from '@api';
 import { ServiceCard, SearchBox, FlightSection } from '@modules';
 import { Layout } from '@modules';
+import { useNavigate } from 'react-router-dom';
 
 import styles from './style.module.scss';
 
@@ -32,12 +33,8 @@ const services = [
 export const Home = () => {
   const [airports, setAirports] = useState<Option[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchParams, setSearchParams] = useState({
-    from: '',
-    to: '',
-    date: '',
-  });
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,36 +94,14 @@ export const Home = () => {
   }, []);
 
   const handleSearch = (from: string, to: string, date: string) => {
-    // Обработка поиска
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-    document.body.style.overflow = !isMobileMenuOpen ? 'hidden' : '';
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-    document.body.style.overflow = '';
-  };
-
-  const scrollToSection = (sectionId: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const section = document.getElementById(sectionId);
-    if (section) {
-      const navHeight =
-        document.querySelector(`.${styles.nav}`)?.getBoundingClientRect()
-          .height || 0;
-      const offset =
-        section.getBoundingClientRect().top + window.scrollY - navHeight;
-
-      window.scrollTo({
-        top: offset,
-        behavior: 'smooth',
-      });
-
-      closeMobileMenu();
-    }
+    // Вместо параметров URL используем state для навигации
+    navigate('/catalog', {
+      state: {
+        from,
+        to,
+        date,
+      },
+    });
   };
 
   return (
