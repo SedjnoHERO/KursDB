@@ -19,7 +19,7 @@ export interface Ticket {
   date: string;
   time: string;
   price: number;
-  status: 'booked' | 'paid' | 'cancelled';
+  status: 'booked' | 'checked-in' | 'canceled';
 }
 
 interface TicketCardProps {
@@ -68,12 +68,12 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onAction }) => {
                 <FaHourglassHalf /> Забронирован
               </>
             )}
-            {ticket.status === 'paid' && (
+            {ticket.status === 'checked-in' && (
               <>
                 <FaCheckCircle /> Оплачен
               </>
             )}
-            {ticket.status === 'cancelled' && (
+            {ticket.status === 'canceled' && (
               <>
                 <FaTimesCircle /> Отменен
               </>

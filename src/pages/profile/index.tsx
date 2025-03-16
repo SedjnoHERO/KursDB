@@ -41,7 +41,7 @@ interface Ticket {
   date: string;
   time: string;
   price: number;
-  status: 'booked' | 'paid' | 'cancelled';
+  status: 'booked' | 'checked-in' | 'canceled';
 }
 
 interface ProfileHeaderProps {
@@ -74,16 +74,18 @@ interface TicketsListProps {
   onTicketAction: (ticketId: string, action: 'pay' | 'cancel') => void;
 }
 
+interface FlightData {
+  FlightID: number;
+  DepartureTime: string;
+  DepartureAirport: { City: string };
+  ArrivalAirport: { City: string };
+}
+
 interface TicketResponse {
   TicketID: number;
   Status: string;
   Price: number;
-  FLIGHT: {
-    FlightID: number;
-    DepartureTime: string;
-    DepartureAirport: { City: string };
-    ArrivalAirport: { City: string };
-  };
+  FLIGHT: FlightData;
 }
 
 const ProfileHeader = ({ isEditing, onEditClick }: ProfileHeaderProps) => (
@@ -233,6 +235,64 @@ export const Profile = () => {
   );
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
+  const fetchUserTickets = async () => {
+    if (!user?.email) return;
+
+    try {
+      const { data: passenger } = await Supabase.from('PASSENGER')
+        .select('PassengerID')
+        .eq('Email', user.email)
+        .single();
+
+      if (!passenger) return;
+
+      const { data: ticketsData, error } = await Supabase.from('TICKET')
+        .select(
+          `
+          TicketID,
+          Status,
+          Price,
+          FLIGHT (
+            FlightID,
+            DepartureTime,
+            DepartureAirport:DepartureAirportID (City),
+            ArrivalAirport:ArrivalAirportID (City)
+          )
+        `,
+        )
+        .eq('PassengerID', passenger.PassengerID)
+        .order('PurchaseDate', { ascending: false });
+
+      if (error) throw error;
+
+      if (ticketsData) {
+        const formattedTickets = (
+          ticketsData as unknown as TicketResponse[]
+        ).map(ticket => ({
+          id: ticket.TicketID.toString(),
+          from: ticket.FLIGHT.DepartureAirport.City,
+          to: ticket.FLIGHT.ArrivalAirport.City,
+          date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
+            'ru-RU',
+          ),
+          time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
+            'ru-RU',
+            {
+              hour: '2-digit',
+              minute: '2-digit',
+            },
+          ),
+          price: ticket.Price,
+          status: ticket.Status as 'booked' | 'checked-in' | 'canceled',
+        }));
+        setTickets(formattedTickets);
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      toast.error('Ошибка при загрузке билетов');
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.email) return;
@@ -254,64 +314,8 @@ export const Profile = () => {
     };
 
     fetchUserData();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchUserTickets = async () => {
-      if (!originalProfile?.PassengerID) return;
-
-      try {
-        const { data: tickets, error } = await Supabase.from('TICKET')
-          .select(
-            `
-            TicketID,
-            Status,
-            Price,
-            FLIGHT (
-              FlightID,
-              DepartureTime,
-              DepartureAirport:DepartureAirportID(City),
-              ArrivalAirport:ArrivalAirportID(City)
-            )
-          `,
-          )
-          .eq('PassengerID', originalProfile.PassengerID)
-          .returns<TicketResponse[]>();
-
-        if (error) throw error;
-
-        if (tickets) {
-          setTickets(
-            tickets.map(ticket => ({
-              id: ticket.TicketID.toString(),
-              from: ticket.FLIGHT.DepartureAirport.City,
-              to: ticket.FLIGHT.ArrivalAirport.City,
-              date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
-                'ru-RU',
-              ),
-              time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
-                'ru-RU',
-                {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                },
-              ),
-              price: ticket.Price,
-              status: ticket.Status.toLowerCase() as
-                | 'booked'
-                | 'paid'
-                | 'cancelled',
-            })),
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching tickets:', error);
-        toast.error('Ошибка при загрузке билетов');
-      }
-    };
-
     fetchUserTickets();
-  }, [originalProfile]);
+  }, [user]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -360,29 +364,21 @@ export const Profile = () => {
     action: 'pay' | 'cancel',
   ) => {
     try {
-      const { error } = await Supabase.from('TICKET')
-        .update({
-          Status: action === 'pay' ? 'paid' : 'cancelled',
-          PurchaseDate: action === 'pay' ? new Date().toISOString() : undefined,
-        })
-        .eq('TicketID', ticketId);
+      const newStatus = action === 'pay' ? 'checked-in' : 'canceled';
 
-      if (error) throw error;
+      const result = await TableAPI.updateRecord('TICKET', parseInt(ticketId), {
+        Status: newStatus,
+      });
 
-      setTickets(prev =>
-        prev.map(ticket =>
-          ticket.id === ticketId
-            ? { ...ticket, status: action === 'pay' ? 'paid' : 'cancelled' }
-            : ticket,
-        ),
-      );
-
-      toast.success(
-        action === 'pay' ? 'Билет успешно оплачен' : 'Бронирование отменено',
-      );
+      if (result) {
+        toast.success(
+          action === 'pay' ? 'Билет успешно оплачен' : 'Билет успешно отменен',
+        );
+        fetchUserTickets(); // Обновляем список билетов
+      }
     } catch (error) {
-      console.error('Error updating ticket:', error);
-      toast.error('Ошибка при обновлении билета');
+      console.error('Error updating ticket status:', error);
+      toast.error('Ошибка при обновлении статуса билета');
     }
   };
 
