@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FaPlane,
   FaCalendarAlt,
@@ -27,8 +28,28 @@ interface TicketCardProps {
 }
 
 export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onAction }) => {
+  const navigate = useNavigate();
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Предотвращаем навигацию если клик был по кнопкам действий
+    if ((e.target as HTMLElement).closest(`.${styles.ticketActions}`)) {
+      return;
+    }
+    navigate(`/ticket/${ticket.id}`);
+  };
+
   return (
-    <div className={`${styles.ticketCard} ${styles[ticket.status]}`}>
+    <div
+      className={`${styles.ticketCard} ${styles[ticket.status]}`}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick(e as any);
+        }
+      }}
+    >
       <div className={styles.ticketInfo}>
         <div className={styles.route}>
           <h3>
@@ -64,13 +85,19 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onAction }) => {
         <div className={styles.ticketActions}>
           <button
             className={styles.payButton}
-            onClick={() => onAction(ticket.id, 'pay')}
+            onClick={e => {
+              e.stopPropagation();
+              onAction(ticket.id, 'pay');
+            }}
           >
             <FaCreditCard /> Оплатить
           </button>
           <button
             className={styles.cancelButton}
-            onClick={() => onAction(ticket.id, 'cancel')}
+            onClick={e => {
+              e.stopPropagation();
+              onAction(ticket.id, 'cancel');
+            }}
           >
             <FaTimes /> Отменить
           </button>
