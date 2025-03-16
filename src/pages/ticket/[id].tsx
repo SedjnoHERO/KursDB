@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   FaPlane,
   FaCalendarAlt,
   FaClock,
   FaMapMarkerAlt,
   FaMoneyBillWave,
+  FaArrowLeft,
 } from 'react-icons/fa';
 import { Layout } from '@modules';
 import { useAuth } from '@config';
@@ -199,6 +200,8 @@ export const TicketDetail = () => {
     phone: '',
   });
 
+  const isExistingTicket = searchParams.get('status') !== null;
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) return;
@@ -262,28 +265,26 @@ export const TicketDetail = () => {
       }
     };
 
-    fetchFlightData();
-  }, [id]);
+    if (!isExistingTicket) {
+      fetchFlightData();
+    }
+  }, [id, isExistingTicket]);
 
   const ticket: TicketInfo = {
     id: id,
     from: searchParams.get('from') || 'Не указан',
     to: searchParams.get('to') || 'Не указан',
-    date: new Date(searchParams.get('date') || '').toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
-    time: new Date(searchParams.get('date') || '').toLocaleTimeString('ru-RU', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
+    date: searchParams.get('date') || '',
+    time: searchParams.get('time') || '',
     duration: '1ч 30м',
     price: Number(searchParams.get('price')) || 0,
     availableSeats: availableSeats,
     airline: searchParams.get('airline') || 'Не указана',
     aircraft: searchParams.get('aircraft') || 'Не указан',
   };
+
+  const ticketStatus = searchParams.get('status');
+  const seatNumber = searchParams.get('seatNumber');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -387,22 +388,46 @@ export const TicketDetail = () => {
         <div className={styles.contentContainer}>
           <div className={styles.ticketDetail}>
             <div className={styles.ticketInfo}>
-              <h1>Информация о рейсе</h1>
+              {isExistingTicket && (
+                <Link to="/profile" className={styles.backButton}>
+                  <FaArrowLeft />
+                  Назад
+                </Link>
+              )}
+              <h1>Информация о {isExistingTicket ? 'билете' : 'рейсе'}</h1>
 
               <div className={styles.mainInfo}>
                 <RouteInfo from={ticket.from} to={ticket.to} />
                 <FlightDetails ticket={ticket} />
               </div>
-
-              <AdditionalInfo ticket={ticket} />
+              {!isExistingTicket && <AdditionalInfo ticket={ticket} />}
+              {isExistingTicket && (
+                <div className={styles.ticketStatus}>
+                  <h2>Статус билета</h2>
+                  <div
+                    className={`${styles.status} ${styles[ticketStatus || '']}`}
+                  >
+                    {ticketStatus === 'booked' && 'Забронирован'}
+                    {ticketStatus === 'checked-in' && 'Оплачен'}
+                    {ticketStatus === 'canceled' && 'Отменен'}
+                  </div>
+                  {seatNumber && (
+                    <p className={styles.seatNumber}>
+                      Место в самолете: {seatNumber}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            <BookingForm
-              formData={formData}
-              ticket={ticket}
-              onSubmit={handleSubmit}
-              onChange={handleInputChange}
-            />
+            {!isExistingTicket && (
+              <BookingForm
+                formData={formData}
+                ticket={ticket}
+                onSubmit={handleSubmit}
+                onChange={handleInputChange}
+              />
+            )}
           </div>
         </div>
       </div>
