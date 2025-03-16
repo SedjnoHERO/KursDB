@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaPlane, FaBars, FaTimes, FaUser } from 'react-icons/fa';
+import { FaPlane, FaBars, FaTimes } from 'react-icons/fa';
 import { EntityType } from '@api';
 import { ProfileButton } from '../ProfileButton';
 import styles from './style.module.scss';
