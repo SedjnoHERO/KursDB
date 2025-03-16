@@ -622,24 +622,46 @@ export const TableComponent = ({ type }: ITableProps) => {
     </thead>
   );
 
-  const renderTableBody = () => (
-    <tbody>
-      {isLoading ? (
-        Array(itemsPerPage)
-          .fill(0)
-          .map((_, index) => (
-            <tr key={`skeleton-row-${index}`}>
-              {Array(columns.length + 1)
-                .fill(0)
-                .map((_, colIndex) => (
-                  <td key={`skeleton-cell-${index}-${colIndex}`}>
-                    <Skeleton />
-                  </td>
-                ))}
-            </tr>
-          ))
-      ) : filteredData.length > 0 && columns.length > 0 ? (
-        filteredData.slice(startIndex, endIndex).map(row => {
+  const renderTableBody = () => {
+    // Очищаем данные при загрузке
+    if (isLoading) {
+      return (
+        <tbody>
+          {Array(itemsPerPage)
+            .fill(0)
+            .map((_, index) => (
+              <tr key={`skeleton-row-${type}-${index}`}>
+                {Array(columns.length + 1)
+                  .fill(0)
+                  .map((_, colIndex) => (
+                    <td key={`skeleton-cell-${type}-${index}-${colIndex}`}>
+                      <Skeleton />
+                    </td>
+                  ))}
+              </tr>
+            ))}
+        </tbody>
+      );
+    }
+
+    // Если нет данных, показываем сообщение
+    if (!filteredData.length || !columns.length) {
+      return (
+        <tbody>
+          <tr>
+            <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
+              Нет данных для отображения
+            </td>
+          </tr>
+        </tbody>
+      );
+    }
+
+    // Отображаем данные только если они загружены
+    return (
+      <tbody>
+        {filteredData.slice(startIndex, endIndex).map((row, index) => {
+          const uniqueId = `${type}-${row[idFields[type]]}-${index}`;
           const hasMatch = searchQuery
             ? Object.entries(row).some(([column, value]) => {
                 const searchValue =
@@ -656,12 +678,12 @@ export const TableComponent = ({ type }: ITableProps) => {
 
           return (
             <tr
-              key={row[idFields[type]]}
+              key={uniqueId}
               className={hasMatch ? styles.highlightedRow : ''}
             >
               {columns.map(column => (
                 <td
-                  key={`${row[idFields[type]]}-${column}`}
+                  key={`${uniqueId}-${column}`}
                   style={{
                     width: getColumnWidth(column),
                     minWidth: getColumnWidth(column),
@@ -673,16 +695,10 @@ export const TableComponent = ({ type }: ITableProps) => {
               {renderActionButtons(row)}
             </tr>
           );
-        })
-      ) : (
-        <tr>
-          <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
-            Нет данных для отображения
-          </td>
-        </tr>
-      )}
-    </tbody>
-  );
+        })}
+      </tbody>
+    );
+  };
 
   const processFormData = (data: any, type: EntityType) => {
     const processedData = { ...data };
