@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Layout } from '@modules';
+import { TableComponent, Layout } from '@modules';
 import { EntityType } from '@api';
 import styles from './style.module.scss';
-import { TableComponent } from '@modules';
 import { Toaster } from 'sonner';
 
 export const AdminPage = () => {
