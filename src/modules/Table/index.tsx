@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Filters } from './components/Filters';
 import styles from './style.module.scss';
+import { PhoneInput } from './components/PhoneInput';
 
 interface ITableProps {
   type: EntityType;
@@ -428,12 +429,36 @@ export const TableComponent = ({ type }: ITableProps) => {
             break;
 
           case 'PassportSeries':
-            if (!/^[A-ZА-Я]*$/.test(value)) return;
-            break;
+            // Преобразуем все буквы в заглавные и удаляем не-буквенные символы
+            const upperLetters = value
+              .toUpperCase()
+              .replace(/[^A-ZА-Я]/g, '')
+              .slice(0, 2);
+            setFormData({ ...formData, [column]: upperLetters });
+            return;
 
           case 'PassportNumber':
+            // Оставляем только цифры и ограничиваем до 7 символов
+            const numbers = value.replace(/\D/g, '').slice(0, 7);
+            setFormData({ ...formData, [column]: numbers });
+            return;
+
+          case 'Price':
+            // Проверяем, что введены только цифры
             if (!/^\d*$/.test(value)) return;
-            break;
+
+            const priceValue = Number(value);
+            // Проверяем ограничения на стоимость
+            if (priceValue > 2000) {
+              toast.error('Стоимость не может быть больше 2000 BYN');
+              return;
+            }
+            if (priceValue < 0) {
+              toast.error('Стоимость не может быть отрицательной');
+              return;
+            }
+            setFormData({ ...formData, [column]: value });
+            return;
         }
 
         setFormData({ ...formData, [column]: value });
@@ -730,6 +755,21 @@ export const TableComponent = ({ type }: ITableProps) => {
               )}
               value={formData[column]}
               onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'Phone') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <PhoneInput
+              value={formData[column] || ''}
+              onChange={value => setFormData({ ...formData, [column]: value })}
             />
           </div>
         );
