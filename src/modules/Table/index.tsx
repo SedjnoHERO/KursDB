@@ -929,22 +929,18 @@ export const TableComponent = ({ type }: ITableProps) => {
     const processedData = processFormData(formData, type);
 
     if (!validateFormData(processedData, columns, idFields, type)) {
-      console.log('Проверка не удалась');
       return;
     }
 
     try {
       const result = await TableAPI.createRecord(type, processedData);
       if (result) {
-        console.log('Record added successfully:', result);
         setIsAddModalOpen(false);
         setFormData({});
         fetchTableData();
-      } else {
-        console.log('Failed to add record');
       }
     } catch (error) {
-      console.error('Error adding record:', error);
+      console.error('Ошибка при добавлении записи:', error);
     }
   };
 
@@ -1172,23 +1168,19 @@ export const TableComponent = ({ type }: ITableProps) => {
         ? {
             Gender: 'Male',
             Role: 'user',
+            FirstName: '',
+            LastName: '',
+            DateOfBirth: new Date().toISOString().split('T')[0],
+            Email: '',
+            Phone: '',
+            PassportSeries: '',
+            PassportNumber: '',
           }
         : {};
 
     setFormData(initialFormData);
     setIsAddModalOpen(true);
   };
-
-  const memoizedFormatCellValue = useCallback(formatCellValue, [relatedData]);
-
-  const flightOptions = useMemo(
-    () =>
-      Object.entries(relatedData.flights).map(([id, number]) => ({
-        value: id,
-        label: number,
-      })),
-    [relatedData.flights],
-  );
 
   return (
     <>
