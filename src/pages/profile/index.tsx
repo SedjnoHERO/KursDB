@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from '@modules';
-import {
-  FaUser,
-  FaTicketAlt,
-  FaEdit,
-  FaCreditCard,
-  FaTimes,
-  FaPlane,
-  FaCalendarAlt,
-  FaClock,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaHourglassHalf,
-} from 'react-icons/fa';
+import { FaUser, FaTicketAlt, FaEdit, FaPlane } from 'react-icons/fa';
 import { useAuth } from '@config';
 import { TableAPI } from '@api';
 import { Supabase } from '@api';
@@ -64,28 +52,21 @@ interface InfoFieldProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-interface TicketCardProps {
-  ticket: Ticket;
-  onAction: (ticketId: string, action: 'pay' | 'cancel') => void;
-}
-
 interface TicketsListProps {
   tickets: Ticket[];
   onTicketAction: (ticketId: string, action: 'pay' | 'cancel') => void;
-}
-
-interface FlightData {
-  FlightID: number;
-  DepartureTime: string;
-  DepartureAirport: { City: string };
-  ArrivalAirport: { City: string };
 }
 
 interface TicketResponse {
   TicketID: number;
   Status: string;
   Price: number;
-  FLIGHT: FlightData;
+  FLIGHT: {
+    FlightID: number;
+    DepartureTime: string;
+    DepartureAirport: { City: string };
+    ArrivalAirport: { City: string };
+  };
 }
 
 const ProfileHeader = ({ isEditing, onEditClick }: ProfileHeaderProps) => (
@@ -235,64 +216,6 @@ export const Profile = () => {
   );
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
-  const fetchUserTickets = async () => {
-    if (!user?.email) return;
-
-    try {
-      const { data: passenger } = await Supabase.from('PASSENGER')
-        .select('PassengerID')
-        .eq('Email', user.email)
-        .single();
-
-      if (!passenger) return;
-
-      const { data: ticketsData, error } = await Supabase.from('TICKET')
-        .select(
-          `
-          TicketID,
-          Status,
-          Price,
-          FLIGHT (
-            FlightID,
-            DepartureTime,
-            DepartureAirport:DepartureAirportID (City),
-            ArrivalAirport:ArrivalAirportID (City)
-          )
-        `,
-        )
-        .eq('PassengerID', passenger.PassengerID)
-        .order('PurchaseDate', { ascending: false });
-
-      if (error) throw error;
-
-      if (ticketsData) {
-        const formattedTickets = (
-          ticketsData as unknown as TicketResponse[]
-        ).map(ticket => ({
-          id: ticket.TicketID.toString(),
-          from: ticket.FLIGHT.DepartureAirport.City,
-          to: ticket.FLIGHT.ArrivalAirport.City,
-          date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
-            'ru-RU',
-          ),
-          time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
-            'ru-RU',
-            {
-              hour: '2-digit',
-              minute: '2-digit',
-            },
-          ),
-          price: ticket.Price,
-          status: ticket.Status as 'booked' | 'checked-in' | 'canceled',
-        }));
-        setTickets(formattedTickets);
-      }
-    } catch (error) {
-      console.error('Error fetching tickets:', error);
-      toast.error('Ошибка при загрузке билетов');
-    }
-  };
-
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.email) return;
@@ -314,8 +237,64 @@ export const Profile = () => {
     };
 
     fetchUserData();
-    fetchUserTickets();
   }, [user]);
+
+  useEffect(() => {
+    const fetchUserTickets = async () => {
+      if (!originalProfile?.PassengerID) return;
+
+      try {
+        const { data: tickets, error } = await Supabase.from('TICKET')
+          .select(
+            `
+            TicketID,
+            Status,
+            Price,
+            FLIGHT (
+              FlightID,
+              DepartureTime,
+              DepartureAirport:DepartureAirportID(City),
+              ArrivalAirport:ArrivalAirportID(City)
+            )
+          `,
+          )
+          .eq('PassengerID', originalProfile.PassengerID)
+          .returns<TicketResponse[]>();
+
+        if (error) throw error;
+
+        if (tickets) {
+          setTickets(
+            tickets.map(ticket => ({
+              id: ticket.TicketID.toString(),
+              from: ticket.FLIGHT.DepartureAirport.City,
+              to: ticket.FLIGHT.ArrivalAirport.City,
+              date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
+                'ru-RU',
+              ),
+              time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
+                'ru-RU',
+                {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                },
+              ),
+              price: ticket.Price,
+              status: ticket.Status.toLowerCase() as
+                | 'booked'
+                | 'checked-in'
+                | 'canceled',
+            })),
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        toast.error('Ошибка при загрузке билетов');
+      }
+    };
+
+    fetchUserTickets();
+  }, [originalProfile]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -364,21 +343,32 @@ export const Profile = () => {
     action: 'pay' | 'cancel',
   ) => {
     try {
-      const newStatus = action === 'pay' ? 'checked-in' : 'canceled';
+      const { error } = await Supabase.from('TICKET')
+        .update({
+          Status: action === 'pay' ? 'checked-in' : 'canceled',
+          PurchaseDate: action === 'pay' ? new Date().toISOString() : undefined,
+        })
+        .eq('TicketID', ticketId);
 
-      const result = await TableAPI.updateRecord('TICKET', parseInt(ticketId), {
-        Status: newStatus,
-      });
+      if (error) throw error;
 
-      if (result) {
-        toast.success(
-          action === 'pay' ? 'Билет успешно оплачен' : 'Билет успешно отменен',
-        );
-        fetchUserTickets(); // Обновляем список билетов
-      }
+      setTickets(prev =>
+        prev.map(ticket =>
+          ticket.id === ticketId
+            ? {
+                ...ticket,
+                status: action === 'pay' ? 'checked-in' : 'canceled',
+              }
+            : ticket,
+        ),
+      );
+
+      toast.success(
+        action === 'pay' ? 'Билет успешно оплачен' : 'Бронирование отменено',
+      );
     } catch (error) {
-      console.error('Error updating ticket status:', error);
-      toast.error('Ошибка при обновлении статуса билета');
+      console.error('Error updating ticket:', error);
+      toast.error('Ошибка при обновлении билета');
     }
   };
 
