@@ -24,6 +24,7 @@ import {
   getFieldTooltip,
 } from '@config';
 import { toast } from 'sonner';
+import { Filters } from './components/Filters';
 import styles from './style.module.scss';
 
 interface ITableProps {
@@ -251,260 +252,81 @@ export const TableComponent = ({ type }: ITableProps) => {
     setRangeFilters({});
   };
 
-  const renderFilterModal = () => {
-    const filters = TABLE_FILTERS[type];
-
-    return (
-      <Modal
-        isOpen={isFiltersOpen}
-        onClose={() => setIsFiltersOpen(false)}
-        title="Фильтры"
-        size="md"
-      >
-        <div className={styles.filtersModal}>
-          {filters.map((filter: FilterConfig) => (
-            <div key={filter.field} className={styles.filterField}>
-              <label>{filter.label}</label>
-              {filter.type === 'select' && (
-                <Selector
-                  options={filter.options || []}
-                  value={activeFilters[filter.field] || ''}
-                  onChange={value => handleFilterChange(filter.field, value)}
-                />
-              )}
-              {(filter.type === 'date' || filter.type === 'number') && (
-                <div className={styles.rangeFilter}>
-                  <div className={styles.rangeToggle}>
-                    <label className={styles.switch}>
-                      <input
-                        type="checkbox"
-                        checked={rangeFilters[filter.field] || false}
-                        onChange={() => handleRangeToggle(filter.field)}
-                      />
-                      <span className={styles.slider}></span>
-                    </label>
-                    <span>Диапазон</span>
-                  </div>
-                  {rangeFilters[filter.field] ? (
-                    <div className={styles.rangeInputs}>
-                      <div className={styles.rangeInput}>
-                        <span>{filter.rangeLabels?.from}</span>
-                        {filter.type === 'date' ? (
-                          <input
-                            type="date"
-                            value={activeFilters[`${filter.field}From`] || ''}
-                            onChange={e =>
-                              handleFilterChange(
-                                filter.field,
-                                {
-                                  from: e.target.value,
-                                  to: activeFilters[`${filter.field}To`] || '',
-                                },
-                                true,
-                              )
-                            }
-                          />
-                        ) : (
-                          <input
-                            type="number"
-                            value={activeFilters[`${filter.field}From`] || ''}
-                            onChange={e =>
-                              handleFilterChange(
-                                filter.field,
-                                {
-                                  from: e.target.value,
-                                  to: activeFilters[`${filter.field}To`] || '',
-                                },
-                                true,
-                              )
-                            }
-                            min={filter.validation?.min}
-                          />
-                        )}
-                      </div>
-                      <div className={styles.rangeInput}>
-                        <span>{filter.rangeLabels?.to}</span>
-                        {filter.type === 'date' ? (
-                          <input
-                            type="date"
-                            value={activeFilters[`${filter.field}To`] || ''}
-                            onChange={e =>
-                              handleFilterChange(
-                                filter.field,
-                                {
-                                  from:
-                                    activeFilters[`${filter.field}From`] || '',
-                                  to: e.target.value,
-                                },
-                                true,
-                              )
-                            }
-                          />
-                        ) : (
-                          <input
-                            type="number"
-                            value={activeFilters[`${filter.field}To`] || ''}
-                            onChange={e =>
-                              handleFilterChange(
-                                filter.field,
-                                {
-                                  from:
-                                    activeFilters[`${filter.field}From`] || '',
-                                  to: e.target.value,
-                                },
-                                true,
-                              )
-                            }
-                            min={filter.validation?.min}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ) : filter.type === 'date' ? (
-                    <input
-                      type="date"
-                      value={activeFilters[filter.field] || ''}
-                      onChange={e =>
-                        handleFilterChange(filter.field, e.target.value)
-                      }
-                    />
-                  ) : (
-                    <input
-                      type="number"
-                      value={activeFilters[filter.field] || ''}
-                      onChange={e =>
-                        handleFilterChange(filter.field, e.target.value)
-                      }
-                      min={filter.validation?.min}
-                    />
-                  )}
-                </div>
-              )}
-              {filter.type === 'text' && (
-                <input
-                  type="text"
-                  value={activeFilters[filter.field] || ''}
-                  onChange={e =>
-                    handleFilterChange(filter.field, e.target.value)
-                  }
-                  pattern={filter.validation?.pattern?.source}
-                />
-              )}
-            </div>
-          ))}
-          <div className={styles.filterActions}>
-            <Button
-              variant="outline"
-              label="Сбросить"
-              onClick={handleFilterReset}
-            />
-            <Button
-              variant="primary"
-              label="Применить"
-              onClick={() => setIsFiltersOpen(false)}
-            />
-          </div>
-        </div>
-      </Modal>
-    );
-  };
-
   const filteredData = useMemo(() => {
     return sortedData.filter(row => {
-      // Применяем поиск по всем полям
-      const searchMatch = searchQuery
-        ? Object.entries(row).some(([column, value]) => {
-            const searchValue =
-              column === 'Gender'
-                ? VALUE_TRANSLATIONS.Gender[
-                    value as keyof typeof VALUE_TRANSLATIONS.Gender
-                  ]
-                : value;
-            return String(searchValue)
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase());
-          })
-        : true;
+      // Применяем только фильтры
+      return Object.entries(activeFilters).every(([field, value]) => {
+        if (!value) return true;
 
-      // Применяем фильтры
-      const filtersMatch = Object.entries(activeFilters).every(
-        ([field, value]) => {
-          if (!value) return true;
+        const filterConfig = TABLE_FILTERS[type].find(
+          (f: FilterConfig) => f.field === field || field.startsWith(f.field),
+        );
 
-          const filterConfig = TABLE_FILTERS[type].find(
-            (f: FilterConfig) => f.field === field || field.startsWith(f.field),
-          );
+        if (!filterConfig) return true;
 
-          if (!filterConfig) return true;
+        // Проверяем, является ли поле частью диапазона
+        const isRangeField = field.endsWith('From') || field.endsWith('To');
+        const baseField = isRangeField ? field.slice(0, -4) : field;
 
-          // Проверяем, является ли поле частью диапазона
-          const isRangeField = field.endsWith('From') || field.endsWith('To');
-          const baseField = isRangeField ? field.slice(0, -4) : field;
-          const isFrom = field.endsWith('From');
-          const isTo = field.endsWith('To');
+        // Если это поле диапазона, проверяем только если есть оба значения
+        if (isRangeField) {
+          const fromValue = activeFilters[`${baseField}From`];
+          const toValue = activeFilters[`${baseField}To`];
 
-          // Если это поле диапазона, проверяем только если есть оба значения
-          if (isRangeField) {
-            const fromValue = activeFilters[`${baseField}From`];
-            const toValue = activeFilters[`${baseField}To`];
+          // Если нет обоих значений диапазона, пропускаем проверку
+          if (!fromValue && !toValue) return true;
 
-            // Если нет обоих значений диапазона, пропускаем проверку
-            if (!fromValue && !toValue) return true;
+          const rowValue = row[baseField];
 
-            const rowValue = row[baseField];
+          if (filterConfig.type === 'date') {
+            const rowDate = new Date(rowValue);
+            const fromDate = fromValue ? new Date(fromValue) : null;
+            const toDate = toValue ? new Date(toValue) : null;
 
-            if (filterConfig.type === 'date') {
-              const rowDate = new Date(rowValue);
-              const fromDate = fromValue ? new Date(fromValue) : null;
-              const toDate = toValue ? new Date(toValue) : null;
+            if (fromDate && toDate) {
+              return rowDate >= fromDate && rowDate <= toDate;
+            } else if (fromDate) {
+              return rowDate >= fromDate;
+            } else if (toDate) {
+              return rowDate <= toDate;
+            }
+          } else if (filterConfig.type === 'number') {
+            const numRowValue = Number(rowValue);
+            const fromNum = fromValue ? Number(fromValue) : null;
+            const toNum = toValue ? Number(toValue) : null;
 
-              if (fromDate && toDate) {
-                return rowDate >= fromDate && rowDate <= toDate;
-              } else if (fromDate) {
-                return rowDate >= fromDate;
-              } else if (toDate) {
-                return rowDate <= toDate;
-              }
-            } else if (filterConfig.type === 'number') {
-              const numRowValue = Number(rowValue);
-              const fromNum = fromValue ? Number(fromValue) : null;
-              const toNum = toValue ? Number(toValue) : null;
-
-              if (fromNum !== null && toNum !== null) {
-                return numRowValue >= fromNum && numRowValue <= toNum;
-              } else if (fromNum !== null) {
-                return numRowValue >= fromNum;
-              } else if (toNum !== null) {
-                return numRowValue <= toNum;
-              }
+            if (fromNum !== null && toNum !== null) {
+              return numRowValue >= fromNum && numRowValue <= toNum;
+            } else if (fromNum !== null) {
+              return numRowValue >= fromNum;
+            } else if (toNum !== null) {
+              return numRowValue <= toNum;
             }
           }
+        }
 
-          // Для обычных фильтров
-          switch (filterConfig.type) {
-            case 'select':
-              return row[filterConfig.field] === value;
-            case 'date':
-              const rowDate = new Date(row[filterConfig.field]);
-              const filterDate = new Date(value);
-              return rowDate.toDateString() === filterDate.toDateString();
-            case 'number':
-              const numValue = Number(value);
-              const numRowValue = Number(row[filterConfig.field]);
-              return numRowValue === numValue;
-            case 'text':
-              return String(row[filterConfig.field])
-                .toLowerCase()
-                .includes(String(value).toLowerCase());
-            default:
-              return true;
-          }
-        },
-      );
-
-      return searchMatch && filtersMatch;
+        // Для обычных фильтров
+        switch (filterConfig.type) {
+          case 'select':
+            return row[filterConfig.field] === value;
+          case 'date':
+            const rowDate = new Date(row[filterConfig.field]);
+            const filterDate = new Date(value);
+            return rowDate.toDateString() === filterDate.toDateString();
+          case 'number':
+            const numValue = Number(value);
+            const numRowValue = Number(row[filterConfig.field]);
+            return numRowValue === numValue;
+          case 'text':
+            return String(row[filterConfig.field])
+              .toLowerCase()
+              .includes(String(value).toLowerCase());
+          default:
+            return true;
+        }
+      });
     });
-  }, [sortedData, searchQuery, activeFilters, type]);
+  }, [sortedData, activeFilters, type]);
 
   const renderActionButtons = (row: any) => (
     <td className={styles.actions}>
@@ -579,37 +401,6 @@ export const TableComponent = ({ type }: ITableProps) => {
         ] || column;
 
       const tooltipContent = getFieldTooltip(column, type);
-
-      const getFieldHint = (field: string) => {
-        switch (field) {
-          case 'FirstName':
-          case 'LastName':
-            return 'Только буквы, пробелы и дефисы';
-          case 'Email':
-            return 'Например: user@example.com';
-          case 'Phone':
-            return 'Например: +375291234567';
-          case 'PassportSeries':
-            return '2 заглавные буквы';
-          case 'PassportNumber':
-            return '7 цифр';
-          case 'FlightNumber':
-            return 'Например: AA123 (2 буквы + 3-4 цифры)';
-          case 'Capacity':
-            return 'От 5 до 555 пассажиров';
-          case 'Price':
-            return 'Минимальная цена: 0 BYN';
-          case 'DateOfBirth':
-            return 'Возраст от 2 до 90 лет';
-          case 'DepartureTime':
-          case 'ArrivalTime':
-            return 'Длительность полета не более 24 часов';
-          case 'PurchaseDate':
-            return 'Не более года назад';
-          default:
-            return '';
-        }
-      };
 
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { value } = e.target;
@@ -1198,6 +989,36 @@ export const TableComponent = ({ type }: ITableProps) => {
     </thead>
   );
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+  };
+
+  const isRowMatchingSearch = (row: any): boolean => {
+    if (!searchQuery) return false;
+
+    return Object.entries(row).some(([column, value]) => {
+      const searchValue =
+        column === 'Gender'
+          ? VALUE_TRANSLATIONS.Gender[
+              value as keyof typeof VALUE_TRANSLATIONS.Gender
+            ]
+          : column === 'Role'
+            ? VALUE_TRANSLATIONS.Role[
+                value as keyof typeof VALUE_TRANSLATIONS.Role
+              ]
+            : column === 'Status'
+              ? VALUE_TRANSLATIONS.Status[
+                  value as keyof typeof VALUE_TRANSLATIONS.Status
+                ]
+              : formatCellValue(value, column);
+
+      return String(searchValue)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+    });
+  };
+
   const renderTableBody = () => {
     if (isLoading) {
       return (
@@ -1235,19 +1056,7 @@ export const TableComponent = ({ type }: ITableProps) => {
       <tbody>
         {filteredData.slice(startIndex, endIndex).map((row, index) => {
           const uniqueId = `${type}-${row[idFields[type]]}-${index}`;
-          const hasMatch = searchQuery
-            ? Object.entries(row).some(([column, value]) => {
-                const searchValue =
-                  column === 'Gender'
-                    ? VALUE_TRANSLATIONS.Gender[
-                        value as keyof typeof VALUE_TRANSLATIONS.Gender
-                      ]
-                    : value;
-                return String(searchValue)
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase());
-              })
-            : false;
+          const hasMatch = isRowMatchingSearch(row);
 
           return (
             <tr
@@ -1257,7 +1066,9 @@ export const TableComponent = ({ type }: ITableProps) => {
               {columns.map(column => (
                 <td
                   key={`${uniqueId}-${column}`}
-                  className={isRelatedField(column) ? styles.relatedCell : ''}
+                  className={`${isRelatedField(column) ? styles.relatedCell : ''} ${
+                    hasMatch ? styles.highlightedCell : ''
+                  }`}
                   style={{
                     width: getColumnWidth(column),
                     minWidth: getColumnWidth(column),
@@ -1520,18 +1331,6 @@ export const TableComponent = ({ type }: ITableProps) => {
     return true;
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      setSearchQuery(value);
-    }, 300);
-  };
-
   const handleAddModalOpen = () => {
     const initialFormData =
       type === 'PASSENGER'
@@ -1588,7 +1387,7 @@ export const TableComponent = ({ type }: ITableProps) => {
                         }, 0)
                       );
                     }, 0)}{' '}
-                    совпадений
+                    результатов
                   </span>
                 )}
               </div>
@@ -1653,7 +1452,16 @@ export const TableComponent = ({ type }: ITableProps) => {
         </div>
       </div>
 
-      {renderFilterModal()}
+      <Filters
+        type={type}
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        activeFilters={activeFilters}
+        rangeFilters={rangeFilters}
+        onFilterChange={handleFilterChange}
+        onRangeToggle={handleRangeToggle}
+        onReset={handleFilterReset}
+      />
 
       <Modal
         isOpen={isAddModalOpen}
