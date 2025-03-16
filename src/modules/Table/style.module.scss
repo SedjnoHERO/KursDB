@@ -263,18 +263,21 @@ tbody tr {
 }
 
 .form {
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 
   .formRow {
     display: flex;
-    gap: 16px;
+    gap: 20px;
+    width: 100%;
 
     &.singleColumn {
       .formColumn {
-        flex: 1;
-        max-width: 100%;
+        width: 100%;
       }
     }
   }
@@ -283,63 +286,156 @@ tbody tr {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 15px;
   }
 
   .field {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
 
     label {
-      font-weight: bold;
-    }
-
-    input {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .datetimeInput {
-      padding: 8px;
-      border: 1px solid var(--border-primary);
-      border-radius: 4px;
-      width: 100%;
       font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .validationMessage {
+      font-size: 12px;
+      color: var(--error-color);
+      margin-top: 4px;
+    }
+
+    // Общие стили для всех элементов ввода
+    input, select, .selector {
+      height: 40px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      background-color: var(--input-bg);
       color: var(--text-primary);
-      background: var(--background-light);
+      width: 100%;
+      box-sizing: border-box;
 
       &:focus {
         outline: none;
         border-color: var(--primary-color);
         box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
       }
+
+      &:hover {
+        border-color: var(--primary-color);
+      }
+
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      &[type="date"],
+      &[type="datetime-local"] {
+        font-family: inherit;
+      }
+
+      &[type="number"] {
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      }
+
+      &.error {
+        border-color: var(--error-color);
+        
+        &:focus {
+          box-shadow: 0 0 0 2px rgba(var(--error-rgb), 0.1);
+        }
+      }
+    }
+
+    // Специальные стили для селектора
+    .selector {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      cursor: pointer;
+
+      .selectorValue {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .selectorArrow {
+        margin-left: 8px;
+        color: var(--text-secondary);
+        transition: transform 0.2s ease;
+      }
+
+      &.open .selectorArrow {
+        transform: rotate(180deg);
+      }
+    }
+
+    // Стили для выпадающего списка селектора
+    .selectorDropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--background-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      margin-top: 4px;
+      box-shadow: var(--shadow-md);
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+
+      .selectorOption {
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: var(--background-light);
+        }
+
+        &.selected {
+          background-color: var(--primary-color);
+          color: white;
+        }
+      }
+    }
+
+    // Специальные стили для datetime-local
+    .datetimeInput {
+      width: 100%;
     }
   }
 
   .actions {
     display: flex;
     justify-content: flex-end;
-    gap: 16px;
+    gap: 12px;
+    margin-top: 10px;
   }
 }
 
 .deleteConfirmation {
+  padding: 20px;
   text-align: center;
-  padding: 20px 0;
-
-  p {
-    color: var(--text-primary);
-    margin-bottom: 24px;
-    font-size: 16px;
-  }
-
-  .actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-  }
+  color: var(--text-primary);
+  font-size: 16px;
 }
 
 .actions {
@@ -463,43 +559,31 @@ td.actions {
 }
 
 .filtersModal {
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 20px;
 
   .filterField {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 
     label {
+      font-size: 14px;
       font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    input {
-      padding: 0.5rem;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-
-      &:focus {
-        outline: none;
-        border-color: var(--primary-color);
-      }
+      color: var(--text-secondary);
     }
 
     .rangeFilter {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 12px;
 
       .rangeToggle {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 8px;
 
         .switch {
           position: relative;
@@ -528,7 +612,7 @@ td.actions {
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
+            background-color: var(--border-color);
             transition: .4s;
             border-radius: 20px;
 
@@ -549,18 +633,17 @@ td.actions {
 
       .rangeInputs {
         display: flex;
-        gap: 1rem;
-        margin-top: 0.5rem;
+        gap: 12px;
 
         .rangeInput {
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
+          gap: 4px;
 
           span {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            font-size: 12px;
+            color: var(--text-tertiary);
           }
 
           input {
@@ -569,14 +652,76 @@ td.actions {
         }
       }
     }
+
+    input {
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      background-color: var(--input-bg);
+      color: var(--text-primary);
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+      }
+
+      &:hover {
+        border-color: var(--primary-color);
+      }
+
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      &[type="date"],
+      &[type="datetime-local"] {
+        font-family: inherit;
+      }
+
+      &[type="number"] {
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      }
+    }
   }
 
   .filterActions {
     display: flex;
     justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
+    gap: 12px;
+    margin-top: 10px;
+  }
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  overflow: hidden;
+
+  .modalContent {
+    background: var(--background-secondary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: visible;
+    position: relative;
+    z-index: 1001;
   }
 }
