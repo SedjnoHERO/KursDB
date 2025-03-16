@@ -9,11 +9,14 @@ import styles from './style.module.scss';
 
 interface UserData {
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
-  address?: string;
-  role?: 'admin' | 'user';
+  gender: 'Male' | 'Female';
+  dateOfBirth: string;
+  passportSeries?: string;
+  passportNumber?: string;
+  role: 'user';
 }
 
 export const Auth = () => {
@@ -23,7 +26,10 @@ export const Auth = () => {
     firstName: '',
     lastName: '',
     phone: '',
-    address: '',
+    gender: 'Male',
+    dateOfBirth: '',
+    passportSeries: '',
+    passportNumber: '',
     role: 'user',
   });
 
@@ -65,13 +71,16 @@ export const Auth = () => {
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!userData.firstName || !userData.lastName) {
-      toast.error('Заполните имя и фамилию');
-      return;
-    }
-
-    if (!userData.phone) {
-      toast.error('Укажите номер телефона');
+    if (
+      !userData.firstName ||
+      !userData.lastName ||
+      !userData.dateOfBirth ||
+      !userData.gender ||
+      !userData.phone ||
+      !userData.passportSeries ||
+      !userData.passportNumber
+    ) {
+      toast.error('Заполните все поля');
       return;
     }
 
@@ -82,7 +91,10 @@ export const Auth = () => {
           FirstName: userData.firstName,
           LastName: userData.lastName,
           Phone: userData.phone,
-          Address: userData.address || null,
+          Gender: userData.gender,
+          DateOfBirth: userData.dateOfBirth,
+          PassportSeries: userData.passportSeries,
+          PassportNumber: userData.passportNumber,
           Role: 'user',
         },
       ]);
@@ -97,7 +109,9 @@ export const Auth = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
     setUserData(prev => ({ ...prev, [name]: value }));
   };
@@ -170,18 +184,57 @@ export const Auth = () => {
                   />
                 </div>
                 <div className={styles.inputGroup}>
-                  <FaMapMarkerAlt className={styles.icon} />
-                  <input
-                    type="text"
-                    name="address"
-                    placeholder="Адрес"
-                    value={userData.address}
+                  <select
+                    name="gender"
+                    value={userData.gender}
                     onChange={handleInputChange}
+                    required
+                  >
+                    <option value="Male">Мужской</option>
+                    <option value="Female">Женский</option>
+                  </select>
+                </div>
+                <div className={styles.inputGroup}>
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    value={userData.dateOfBirth}
+                    onChange={handleInputChange}
+                    required
                   />
                 </div>
-                <button type="submit" className={styles.submitButton}>
-                  Зарегистрироваться
-                </button>
+                <div className={styles.inputGroup}>
+                  <input
+                    type="text"
+                    name="passportSeries"
+                    placeholder="Серия паспорта"
+                    value={userData.passportSeries}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <input
+                    type="text"
+                    name="passportNumber"
+                    placeholder="Номер паспорта"
+                    value={userData.passportNumber}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className={styles.buttonGroup}>
+                  <button
+                    type="button"
+                    className={styles.backButton}
+                    onClick={() => setStep('email')}
+                  >
+                    Назад
+                  </button>
+                  <button type="submit" className={styles.submitButton}>
+                    Зарегистрироваться
+                  </button>
+                </div>
               </form>
             </>
           )}
