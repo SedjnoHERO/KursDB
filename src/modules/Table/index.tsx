@@ -15,7 +15,12 @@ import {
 } from 'react-icons/fa';
 import { Button, Modal, Skeleton, Selector } from '@components';
 import { TableAPI, EntityType } from '@api';
-import { TABLE_TRANSLATIONS, VALUE_TRANSLATIONS } from '@config';
+import {
+  TABLE_TRANSLATIONS,
+  VALUE_TRANSLATIONS,
+  TABLE_FILTERS,
+  FilterConfig,
+} from '@config';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
 
@@ -53,6 +58,9 @@ export const TableComponent = ({ type }: ITableProps) => {
     airports: {},
     airlines: {},
   });
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+  const [rangeFilters, setRangeFilters] = useState<Record<string, boolean>>({});
 
   const currentTypeRef = useRef(type);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -73,7 +81,8 @@ export const TableComponent = ({ type }: ITableProps) => {
     setSelectedRow(null);
     setFormData({});
     setSearchQuery('');
-    setSelectedFilters({});
+    setActiveFilters({});
+    setRangeFilters({});
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
     setIsDeleteModalOpen(false);
@@ -197,13 +206,299 @@ export const TableComponent = ({ type }: ITableProps) => {
     });
   }, [data, sortConfig]);
 
-  const filteredData = useMemo(() => {
-    return sortedData.filter(row =>
-      Object.entries(selectedFilters).every(([column, filterValue]) =>
-        filterValue ? String(row[column]) === filterValue : true,
-      ),
+  const handleFilterChange = (
+    field: string,
+    value: any,
+    isRange: boolean = false,
+  ) => {
+    if (isRange) {
+      setActiveFilters(prev => ({
+        ...prev,
+        [`${field}From`]: value.from,
+        [`${field}To`]: value.to,
+      }));
+    } else {
+      setActiveFilters(prev => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
+
+  const handleRangeToggle = (field: string) => {
+    setRangeFilters(prev => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+    // Сбрасываем значения при переключении режима
+    setActiveFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[field];
+      delete newFilters[`${field}From`];
+      delete newFilters[`${field}To`];
+      return newFilters;
+    });
+  };
+
+  const handleFilterReset = () => {
+    setActiveFilters({});
+    setRangeFilters({});
+  };
+
+  const renderFilterModal = () => {
+    const filters = TABLE_FILTERS[type];
+
+    return (
+      <Modal
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        title="Фильтры"
+        size="md"
+      >
+        <div className={styles.filtersModal}>
+          {filters.map((filter: FilterConfig) => (
+            <div key={filter.field} className={styles.filterField}>
+              <label>{filter.label}</label>
+              {filter.type === 'select' && (
+                <Selector
+                  options={filter.options || []}
+                  value={activeFilters[filter.field] || ''}
+                  onChange={value => handleFilterChange(filter.field, value)}
+                />
+              )}
+              {(filter.type === 'date' || filter.type === 'number') && (
+                <div className={styles.rangeFilter}>
+                  <div className={styles.rangeToggle}>
+                    <label className={styles.switch}>
+                      <input
+                        type="checkbox"
+                        checked={rangeFilters[filter.field] || false}
+                        onChange={() => handleRangeToggle(filter.field)}
+                      />
+                      <span className={styles.slider}></span>
+                    </label>
+                    <span>Диапазон</span>
+                  </div>
+                  {rangeFilters[filter.field] ? (
+                    <div className={styles.rangeInputs}>
+                      <div className={styles.rangeInput}>
+                        <span>{filter.rangeLabels?.from}</span>
+                        {filter.type === 'date' ? (
+                          <input
+                            type="date"
+                            value={activeFilters[`${filter.field}From`] || ''}
+                            onChange={e =>
+                              handleFilterChange(
+                                filter.field,
+                                {
+                                  from: e.target.value,
+                                  to: activeFilters[`${filter.field}To`] || '',
+                                },
+                                true,
+                              )
+                            }
+                          />
+                        ) : (
+                          <input
+                            type="number"
+                            value={activeFilters[`${filter.field}From`] || ''}
+                            onChange={e =>
+                              handleFilterChange(
+                                filter.field,
+                                {
+                                  from: e.target.value,
+                                  to: activeFilters[`${filter.field}To`] || '',
+                                },
+                                true,
+                              )
+                            }
+                            min={filter.validation?.min}
+                          />
+                        )}
+                      </div>
+                      <div className={styles.rangeInput}>
+                        <span>{filter.rangeLabels?.to}</span>
+                        {filter.type === 'date' ? (
+                          <input
+                            type="date"
+                            value={activeFilters[`${filter.field}To`] || ''}
+                            onChange={e =>
+                              handleFilterChange(
+                                filter.field,
+                                {
+                                  from:
+                                    activeFilters[`${filter.field}From`] || '',
+                                  to: e.target.value,
+                                },
+                                true,
+                              )
+                            }
+                          />
+                        ) : (
+                          <input
+                            type="number"
+                            value={activeFilters[`${filter.field}To`] || ''}
+                            onChange={e =>
+                              handleFilterChange(
+                                filter.field,
+                                {
+                                  from:
+                                    activeFilters[`${filter.field}From`] || '',
+                                  to: e.target.value,
+                                },
+                                true,
+                              )
+                            }
+                            min={filter.validation?.min}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ) : filter.type === 'date' ? (
+                    <input
+                      type="date"
+                      value={activeFilters[filter.field] || ''}
+                      onChange={e =>
+                        handleFilterChange(filter.field, e.target.value)
+                      }
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      value={activeFilters[filter.field] || ''}
+                      onChange={e =>
+                        handleFilterChange(filter.field, e.target.value)
+                      }
+                      min={filter.validation?.min}
+                    />
+                  )}
+                </div>
+              )}
+              {filter.type === 'text' && (
+                <input
+                  type="text"
+                  value={activeFilters[filter.field] || ''}
+                  onChange={e =>
+                    handleFilterChange(filter.field, e.target.value)
+                  }
+                  pattern={filter.validation?.pattern?.source}
+                />
+              )}
+            </div>
+          ))}
+          <div className={styles.filterActions}>
+            <Button
+              variant="outline"
+              label="Сбросить"
+              onClick={handleFilterReset}
+            />
+            <Button
+              variant="primary"
+              label="Применить"
+              onClick={() => setIsFiltersOpen(false)}
+            />
+          </div>
+        </div>
+      </Modal>
     );
-  }, [sortedData, selectedFilters]);
+  };
+
+  const filteredData = useMemo(() => {
+    return sortedData.filter(row => {
+      // Применяем поиск по всем полям
+      const searchMatch = searchQuery
+        ? Object.entries(row).some(([column, value]) => {
+            const searchValue =
+              column === 'Gender'
+                ? VALUE_TRANSLATIONS.Gender[
+                    value as keyof typeof VALUE_TRANSLATIONS.Gender
+                  ]
+                : value;
+            return String(searchValue)
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase());
+          })
+        : true;
+
+      // Применяем фильтры
+      const filtersMatch = Object.entries(activeFilters).every(
+        ([field, value]) => {
+          if (!value) return true;
+
+          const filterConfig = TABLE_FILTERS[type].find(
+            (f: FilterConfig) => f.field === field || field.startsWith(f.field),
+          );
+
+          if (!filterConfig) return true;
+
+          // Проверяем, является ли поле частью диапазона
+          const isRangeField = field.endsWith('From') || field.endsWith('To');
+          const baseField = isRangeField ? field.slice(0, -4) : field;
+          const isFrom = field.endsWith('From');
+          const isTo = field.endsWith('To');
+
+          // Если это поле диапазона, проверяем только если есть оба значения
+          if (isRangeField) {
+            const fromValue = activeFilters[`${baseField}From`];
+            const toValue = activeFilters[`${baseField}To`];
+
+            // Если нет обоих значений диапазона, пропускаем проверку
+            if (!fromValue && !toValue) return true;
+
+            const rowValue = row[baseField];
+
+            if (filterConfig.type === 'date') {
+              const rowDate = new Date(rowValue);
+              const fromDate = fromValue ? new Date(fromValue) : null;
+              const toDate = toValue ? new Date(toValue) : null;
+
+              if (fromDate && toDate) {
+                return rowDate >= fromDate && rowDate <= toDate;
+              } else if (fromDate) {
+                return rowDate >= fromDate;
+              } else if (toDate) {
+                return rowDate <= toDate;
+              }
+            } else if (filterConfig.type === 'number') {
+              const numRowValue = Number(rowValue);
+              const fromNum = fromValue ? Number(fromValue) : null;
+              const toNum = toValue ? Number(toValue) : null;
+
+              if (fromNum !== null && toNum !== null) {
+                return numRowValue >= fromNum && numRowValue <= toNum;
+              } else if (fromNum !== null) {
+                return numRowValue >= fromNum;
+              } else if (toNum !== null) {
+                return numRowValue <= toNum;
+              }
+            }
+          }
+
+          // Для обычных фильтров
+          switch (filterConfig.type) {
+            case 'select':
+              return row[filterConfig.field] === value;
+            case 'date':
+              const rowDate = new Date(row[filterConfig.field]);
+              const filterDate = new Date(value);
+              return rowDate.toDateString() === filterDate.toDateString();
+            case 'number':
+              const numValue = Number(value);
+              const numRowValue = Number(row[filterConfig.field]);
+              return numRowValue === numValue;
+            case 'text':
+              return String(row[filterConfig.field])
+                .toLowerCase()
+                .includes(String(value).toLowerCase());
+            default:
+              return true;
+          }
+        },
+      );
+
+      return searchMatch && filtersMatch;
+    });
+  }, [sortedData, searchQuery, activeFilters, type]);
 
   const renderActionButtons = (row: any) => (
     <td className={styles.actions}>
@@ -1237,6 +1532,7 @@ export const TableComponent = ({ type }: ITableProps) => {
                 variant="outline"
                 leftIcon={<FaFilter />}
                 label="Фильтры"
+                onClick={() => setIsFiltersOpen(true)}
                 disabled={isLoading}
               />
             </div>
@@ -1281,6 +1577,8 @@ export const TableComponent = ({ type }: ITableProps) => {
           </div>
         </div>
       </div>
+
+      {renderFilterModal()}
 
       <Modal
         isOpen={isAddModalOpen}
