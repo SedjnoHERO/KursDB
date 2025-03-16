@@ -40,6 +40,19 @@ export const TableComponent = ({ type }: ITableProps) => {
     key: string | null;
     direction: 'asc' | 'desc';
   }>({ key: null, direction: 'asc' });
+  const [relatedData, setRelatedData] = useState<{
+    flights: Record<string, string>;
+    passengers: Record<string, string>;
+    airplanes: Record<string, string>;
+    airports: Record<string, string>;
+    airlines: Record<string, string>;
+  }>({
+    flights: {},
+    passengers: {},
+    airplanes: {},
+    airports: {},
+    airlines: {},
+  });
 
   const currentTypeRef = useRef(type);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,11 +118,65 @@ export const TableComponent = ({ type }: ITableProps) => {
     }
   }, [type]);
 
+  const fetchRelatedData = useCallback(async () => {
+    try {
+      const [flights, passengers, airplanes, airports, airlines] =
+        await Promise.all([
+          TableAPI.fetchData('FLIGHT'),
+          TableAPI.fetchData('PASSENGER'),
+          TableAPI.fetchData('AIRPLANE'),
+          TableAPI.fetchData('AIRPORT'),
+          TableAPI.fetchData('AIRLINE'),
+        ]);
+
+      setRelatedData({
+        flights: flights.reduce(
+          (acc, flight) => ({
+            ...acc,
+            [flight.FlightID]: flight.FlightNumber,
+          }),
+          {},
+        ),
+        passengers: passengers.reduce(
+          (acc, passenger) => ({
+            ...acc,
+            [passenger.PassengerID]: `${passenger.FirstName} ${passenger.LastName}`,
+          }),
+          {},
+        ),
+        airplanes: airplanes.reduce(
+          (acc, airplane) => ({
+            ...acc,
+            [airplane.AirplaneID]: airplane.Model,
+          }),
+          {},
+        ),
+        airports: airports.reduce(
+          (acc, airport) => ({
+            ...acc,
+            [airport.AirportID]: `${airport.City} (${airport.Name})`,
+          }),
+          {},
+        ),
+        airlines: airlines.reduce(
+          (acc, airline) => ({
+            ...acc,
+            [airline.AirlineID]: airline.Name,
+          }),
+          {},
+        ),
+      });
+    } catch (error) {
+      console.error('Error fetching related data:', error);
+    }
+  }, []);
+
   useEffect(() => {
     currentTypeRef.current = type;
     resetState();
     setCurrentPage(1);
     fetchTableData();
+    fetchRelatedData();
   }, [type]);
 
   const sortedData = useMemo(() => {
@@ -420,6 +487,96 @@ export const TableComponent = ({ type }: ITableProps) => {
         );
       }
 
+      if (column === 'FlightID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={Object.entries(relatedData.flights).map(
+                ([id, number]) => ({
+                  value: id,
+                  label: number,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'AirplaneID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={Object.entries(relatedData.airplanes).map(
+                ([id, model]) => ({
+                  value: id,
+                  label: model,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'DepartureAirportID' || column === 'ArrivalAirportID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={Object.entries(relatedData.airports).map(
+                ([id, name]) => ({
+                  value: id,
+                  label: name,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'AirlineID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={Object.entries(relatedData.airlines).map(
+                ([id, name]) => ({
+                  value: id,
+                  label: name,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'PassengerID' && type === 'TICKET') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>{columnLabel}</label>
+            <Selector
+              options={Object.entries(relatedData.passengers).map(
+                ([id, name]) => ({
+                  value: id,
+                  label: name,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
       return (
         <div key={`field-${column}`} className={styles.field}>
           <label>{columnLabel}</label>
@@ -467,8 +624,41 @@ export const TableComponent = ({ type }: ITableProps) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
 
+  const isForeignKey = (column: string, tableType: EntityType): boolean => {
+    const foreignKeyMap: Record<EntityType, string[]> = {
+      TICKET: ['FlightID', 'PassengerID'],
+      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirportID'],
+      AIRPLANE: ['AirlineID'],
+      AIRPORT: [],
+      AIRLINE: [],
+      PASSENGER: [],
+    };
+
+    return foreignKeyMap[tableType]?.includes(column) || false;
+  };
+
   const formatCellValue = (value: any, column: string) => {
     if (value === null || value === undefined) return '-';
+
+    if (column === idFields[type]) {
+      return value;
+    }
+
+    if (isForeignKey(column, type)) {
+      switch (column) {
+        case 'FlightID':
+          return relatedData.flights[value] || value;
+        case 'PassengerID':
+          return relatedData.passengers[value] || value;
+        case 'AirplaneID':
+          return relatedData.airplanes[value] || value;
+        case 'DepartureAirportID':
+        case 'ArrivalAirportID':
+          return relatedData.airports[value] || value;
+        case 'AirlineID':
+          return relatedData.airlines[value] || value;
+      }
+    }
 
     if (column === 'DateOfBirth') {
       try {
@@ -580,6 +770,10 @@ export const TableComponent = ({ type }: ITableProps) => {
     setSortConfig({ key, direction });
   };
 
+  const isRelatedField = (column: string): boolean => {
+    return isForeignKey(column, type);
+  };
+
   const renderTableHeader = () => (
     <thead>
       <tr>
@@ -596,20 +790,32 @@ export const TableComponent = ({ type }: ITableProps) => {
               }}
               onClick={() => requestSort(column)}
             >
-              {isLoading ? (
-                <Skeleton />
-              ) : (
-                <div className={styles.columnHeader}>
-                  <span className={styles.columnLabel}>{columnLabel}</span>
-                  <FaSort
-                    className={
-                      sortConfig?.key === column
-                        ? styles.activeSortIcon
-                        : styles.inactiveSortIcon
-                    }
-                  />
-                </div>
-              )}
+              <div className={styles.columnHeader}>
+                <span
+                  className={`
+                    ${styles.columnLabel} 
+                    ${isRelatedField(column) ? styles.relatedColumn : ''}
+                  `}
+                >
+                  {isLoading ? (
+                    <Skeleton />
+                  ) : (
+                    <>
+                      {columnLabel}
+                      {isRelatedField(column) && (
+                        <span className={styles.relatedIcon}>⇄</span>
+                      )}
+                    </>
+                  )}
+                </span>
+                <FaSort
+                  className={
+                    sortConfig?.key === column
+                      ? styles.activeSortIcon
+                      : styles.inactiveSortIcon
+                  }
+                />
+              </div>
             </th>
           );
         })}
@@ -623,7 +829,6 @@ export const TableComponent = ({ type }: ITableProps) => {
   );
 
   const renderTableBody = () => {
-    // Очищаем данные при загрузке
     if (isLoading) {
       return (
         <tbody>
@@ -644,7 +849,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       );
     }
 
-    // Если нет данных, показываем сообщение
     if (!filteredData.length || !columns.length) {
       return (
         <tbody>
@@ -657,7 +861,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       );
     }
 
-    // Отображаем данные только если они загружены
     return (
       <tbody>
         {filteredData.slice(startIndex, endIndex).map((row, index) => {
@@ -684,6 +887,7 @@ export const TableComponent = ({ type }: ITableProps) => {
               {columns.map(column => (
                 <td
                   key={`${uniqueId}-${column}`}
+                  className={isRelatedField(column) ? styles.relatedCell : ''}
                   style={{
                     width: getColumnWidth(column),
                     minWidth: getColumnWidth(column),
@@ -703,17 +907,15 @@ export const TableComponent = ({ type }: ITableProps) => {
   const processFormData = (data: any, type: EntityType) => {
     const processedData = { ...data };
 
-    // Определяем поля, которые должны быть числами для каждой таблицы
     const numberFields: Record<EntityType, string[]> = {
       AIRPLANE: ['AirlineID', 'Capacity'],
-      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirpor tID'],
+      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirportID'],
       TICKET: ['FlightID', 'PassengerID', 'Price'],
       PASSENGER: [],
       AIRPORT: [],
       AIRLINE: [],
     };
 
-    // Преобразуем строковые значения в числовые для указанных полей
     numberFields[type].forEach(field => {
       if (processedData[field]) {
         processedData[field] = Number(processedData[field]);
@@ -800,7 +1002,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       column => column !== idFields[type] && column !== 'created_at',
     );
 
-    // Проверка возраста пассажира
     const validatePassengerAge = (birthDate: string) => {
       const birth = new Date(birthDate);
       const today = new Date();
@@ -825,7 +1026,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       return true;
     };
 
-    // Регулярные выражения для валидации
     const patterns = {
       onlyLetters: /^[A-Za-zА-Яа-яЁё\s-]+$/,
       onlyNumbers: /^\d+$/,
@@ -836,7 +1036,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       flightNumber: /^[A-Z]{2}\d{3,4}$/,
     };
 
-    // Проверка числовых значений
     const validateNumber = (value: number, min: number, field: string) => {
       if (value < min) {
         toast.error(`Поле "${field}" не может быть меньше ${min}`);
@@ -845,7 +1044,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       return true;
     };
 
-    // Проверка дат для рейса
     const validateFlightDates = (departure: string, arrival: string) => {
       const departureDate = new Date(departure);
       const arrivalDate = new Date(arrival);
@@ -868,13 +1066,11 @@ export const TableComponent = ({ type }: ITableProps) => {
     for (const field of requiredFields) {
       const value = formData[field];
 
-      // Базовая проверка на пустоту
       if (value === undefined || value === null || value === '') {
         toast.error(`Поле "${field}" не может быть пустым`);
         return false;
       }
 
-      // Валидация в зависимости от типа поля
       switch (field) {
         case 'DateOfBirth':
           if (type === 'PASSENGER' && !validatePassengerAge(value)) {
@@ -949,7 +1145,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       }
     }
 
-    // Проверка дат для рейса
     if (type === 'FLIGHT') {
       if (!validateFlightDates(formData.DepartureTime, formData.ArrivalTime)) {
         return false;
@@ -968,7 +1163,7 @@ export const TableComponent = ({ type }: ITableProps) => {
 
     searchTimeoutRef.current = setTimeout(() => {
       setSearchQuery(value);
-    }, 300); // Задержка в 300 мс
+    }, 300);
   };
 
   const handleAddModalOpen = () => {
@@ -983,6 +1178,17 @@ export const TableComponent = ({ type }: ITableProps) => {
     setFormData(initialFormData);
     setIsAddModalOpen(true);
   };
+
+  const memoizedFormatCellValue = useCallback(formatCellValue, [relatedData]);
+
+  const flightOptions = useMemo(
+    () =>
+      Object.entries(relatedData.flights).map(([id, number]) => ({
+        value: id,
+        label: number,
+      })),
+    [relatedData.flights],
+  );
 
   return (
     <>
