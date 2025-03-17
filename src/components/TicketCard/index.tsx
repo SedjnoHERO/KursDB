@@ -9,10 +9,13 @@ import {
   FaHourglassHalf,
   FaCreditCard,
   FaTimes,
+  FaFileAlt,
+  FaReceipt,
 } from 'react-icons/fa';
 import { TableAPI, Supabase } from '@api';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
+import { Button, downloadDocument, generateDocument } from '@components';
 
 interface AircraftInfo {
   Model: string;
@@ -24,6 +27,7 @@ interface AircraftInfo {
 
 interface FlightData {
   AIRPLANE: AircraftInfo;
+  FlightNumber: string;
 }
 
 export interface ITicketProps {
@@ -38,6 +42,10 @@ export interface ITicketProps {
   aircraft?: string;
   seatNumber?: string;
   flightId?: string;
+  flightNumber?: string;
+  passengerName?: string;
+  departureTime?: string;
+  purchaseDate?: string;
 }
 
 interface ITicketCardProps {
@@ -64,6 +72,7 @@ export const TicketCard = ({
         const { data, error } = await Supabase.from('FLIGHT')
           .select(
             `
+            FlightNumber,
             AIRPLANE:AirplaneID (
               Model,
               Capacity,
@@ -78,15 +87,21 @@ export const TicketCard = ({
 
         if (error) throw error;
 
-        if (data?.AIRPLANE) {
+        if (data) {
+          console.log('Полученные данные рейса:', data);
           setAircraftInfo({
             model: data.AIRPLANE.Model,
             capacity: data.AIRPLANE.Capacity,
             airline: data.AIRPLANE.AIRLINE.Name,
           });
+
+          setTicket(prev => ({
+            ...prev,
+            flightNumber: data.FlightNumber,
+          }));
         }
       } catch (error) {
-        console.error('Error fetching aircraft info:', error);
+        console.error('Ошибка при получении данных рейса:', error);
       }
     };
 
@@ -128,6 +143,53 @@ export const TicketCard = ({
     } catch (error) {
       console.error('Error updating ticket status:', error);
       toast.error('Произошла ошибка при обновлении статуса билета');
+    }
+  };
+
+  const handleDocumentGeneration = async (type: 'ticket' | 'receipt') => {
+    try {
+      console.log('Данные билета перед генерацией:', ticket);
+
+      if (!ticket.flightId) {
+        toast.error('Отсутствует ID рейса');
+        return;
+      }
+
+      const { data: flightData, error: flightError } = await Supabase.from(
+        'FLIGHT',
+      )
+        .select('FlightNumber')
+        .eq('FlightID', ticket.flightId)
+        .single();
+
+      if (flightError || !flightData) {
+        console.error('Ошибка при получении номера рейса:', flightError);
+        toast.error('Не удалось получить номер рейса');
+        return;
+      }
+
+      const documentData = {
+        ...ticket,
+        FlightNumber: flightData.FlightNumber,
+        FirstName: ticket.passengerName?.split(' ')[0] || 'Пассажир',
+        LastName: ticket.passengerName?.split(' ')[1] || '',
+        DepartureTime: ticket.departureTime || `${ticket.date} ${ticket.time}`,
+        TicketID: ticket.id,
+        Price: ticket.price,
+        PurchaseDate: ticket.purchaseDate || new Date().toISOString(),
+        SeatNumber: ticket.seatNumber || 'Не указано',
+        from: ticket.from,
+        to: ticket.to,
+      };
+
+      console.log('Данные для генерации документа:', documentData);
+      await downloadDocument(type, documentData);
+      toast.success(
+        `${type === 'ticket' ? 'Билет' : 'Чек'} успешно сгенерирован`,
+      );
+    } catch (error) {
+      console.error('Ошибка при генерации документа:', error);
+      toast.error('Не удалось сгенерировать документ');
     }
   };
 
@@ -197,6 +259,24 @@ export const TicketCard = ({
           </button>
         </div>
       )}
+      <div className={styles.actions}>
+        {ticket.status === 'checked-in' && (
+          <>
+            <Button
+              variant="outline"
+              leftIcon={<FaFileAlt />}
+              label="Билет"
+              onClick={() => handleDocumentGeneration('ticket')}
+            />
+            <Button
+              variant="outline"
+              leftIcon={<FaReceipt />}
+              label="Чек"
+              onClick={() => handleDocumentGeneration('receipt')}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };

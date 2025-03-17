@@ -12,8 +12,17 @@ import {
   FaTrash,
   FaFilter,
   FaSort,
+  FaFileAlt,
+  FaReceipt,
 } from 'react-icons/fa';
-import { Button, Modal, Skeleton, Selector } from '@components';
+import {
+  Button,
+  Modal,
+  Skeleton,
+  Selector,
+  generateDocument,
+  downloadDocument,
+} from '@components';
 import { TableAPI, EntityType } from '@api';
 import {
   TABLE_TRANSLATIONS,
@@ -24,9 +33,8 @@ import {
   getFieldTooltip,
 } from '@config';
 import { toast } from 'sonner';
-import { Filters } from './components/Filters';
+import { Filters, PhoneInput } from './components';
 import styles from './style.module.scss';
-import { PhoneInput } from './components/PhoneInput';
 
 interface ITableProps {
   type: EntityType;
@@ -350,6 +358,38 @@ export const TableComponent = ({ type }: ITableProps) => {
           setIsDeleteModalOpen(true);
         }}
       />
+      {type === 'TICKET' && row.Status === 'checked-in' && (
+        <>
+          <Button
+            variant="outline"
+            leftIcon={<FaFileAlt />}
+            label="Билет"
+            onClick={() => {
+              downloadDocument('ticket', {
+                ...row,
+                FirstName: row.PASSENGER?.FirstName,
+                LastName: row.PASSENGER?.LastName,
+                FlightNumber: row.FLIGHT?.FlightNumber,
+                DepartureTime: row.FLIGHT?.DepartureTime,
+              });
+            }}
+          />
+          <Button
+            variant="outline"
+            leftIcon={<FaReceipt />}
+            label="Чек"
+            onClick={() => {
+              downloadDocument('receipt', {
+                ...row,
+                FirstName: row.PASSENGER?.FirstName,
+                LastName: row.PASSENGER?.LastName,
+                FlightNumber: row.FLIGHT?.FlightNumber,
+                DepartureTime: row.FLIGHT?.DepartureTime,
+              });
+            }}
+          />
+        </>
+      )}
     </td>
   );
 
