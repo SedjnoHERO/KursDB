@@ -35,6 +35,7 @@ interface Ticket {
   flightId: string;
   flightNumber: string;
   departureTime: string;
+  PassengerID?: string | number;
 }
 
 interface ProfileHeaderProps {
@@ -66,6 +67,8 @@ interface TicketResponse {
   TicketID: number;
   Status: string;
   Price: number;
+  SeatNumber: string;
+  PassengerID: number;
   FLIGHT: {
     FlightID: number;
     FlightNumber: string;
@@ -245,66 +248,82 @@ export const Profile = () => {
     fetchUserData();
   }, [user]);
 
-  useEffect(() => {
-    const fetchUserTickets = async () => {
-      if (!originalProfile?.PassengerID) return;
+  const fetchTickets = async () => {
+    if (!profile?.PassengerID) {
+      console.error('PassengerID не найден в профиле пользователя:', profile);
+      return;
+    }
 
-      try {
-        const { data: tickets, error } = await Supabase.from('TICKET')
-          .select(
-            `
-            TicketID,
-            Status,
-            Price,
-            FLIGHT (
-              FlightID,
-              FlightNumber,
-              DepartureTime,
-              DepartureAirport:DepartureAirportID(City),
-              ArrivalAirport:ArrivalAirportID(City)
-            )
-          `,
+    try {
+      console.log('Запрос билетов для PassengerID:', profile.PassengerID);
+
+      const { data: ticketsData, error } = await Supabase.from('TICKET')
+        .select(
+          `
+          TicketID,
+          Status,
+          Price,
+          SeatNumber,
+          PassengerID,
+          FLIGHT:FlightID (
+            FlightID,
+            FlightNumber,
+            DepartureTime,
+            DepartureAirport:DepartureAirportID (City),
+            ArrivalAirport:ArrivalAirportID (City)
           )
-          .eq('PassengerID', originalProfile.PassengerID)
-          .returns<TicketResponse[]>();
+        `,
+        )
+        .eq('PassengerID', profile.PassengerID);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (tickets) {
-          setTickets(
-            tickets.map(ticket => ({
-              id: ticket.TicketID.toString(),
-              from: ticket.FLIGHT.DepartureAirport.City,
-              to: ticket.FLIGHT.ArrivalAirport.City,
-              date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
-                'ru-RU',
-              ),
-              time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
-                'ru-RU',
-                {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                },
-              ),
-              price: ticket.Price,
-              status: ticket.Status.toLowerCase() as
-                | 'booked'
-                | 'checked-in'
-                | 'canceled',
-              flightId: ticket.FLIGHT.FlightID.toString(),
-              flightNumber: ticket.FLIGHT.FlightNumber,
-              departureTime: ticket.FLIGHT.DepartureTime,
-            })),
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching tickets:', error);
-        toast.error('Ошибка при загрузке билетов');
+      if (ticketsData) {
+        console.log('Получены данные билетов:', ticketsData);
+
+        const formattedTickets = ticketsData.map((ticket: any) => {
+          console.log('Форматирование билета:', ticket);
+          return {
+            id: String(ticket.TicketID),
+            from: ticket.FLIGHT.DepartureAirport.City,
+            to: ticket.FLIGHT.ArrivalAirport.City,
+            date: new Date(ticket.FLIGHT.DepartureTime).toLocaleDateString(
+              'ru-RU',
+            ),
+            time: new Date(ticket.FLIGHT.DepartureTime).toLocaleTimeString(
+              'ru-RU',
+              {
+                hour: '2-digit',
+                minute: '2-digit',
+              },
+            ),
+            price: ticket.Price,
+            status: ticket.Status.toLowerCase() as
+              | 'booked'
+              | 'checked-in'
+              | 'canceled',
+            seatNumber: ticket.SeatNumber,
+            flightId: String(ticket.FLIGHT.FlightID),
+            flightNumber: ticket.FLIGHT.FlightNumber,
+            departureTime: ticket.FLIGHT.DepartureTime,
+            PassengerID: ticket.PassengerID,
+          };
+        });
+
+        console.log('Форматированные билеты:', formattedTickets);
+        setTickets(formattedTickets);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      toast.error('Не удалось загрузить билеты');
+    }
+  };
 
-    fetchUserTickets();
-  }, [originalProfile]);
+  useEffect(() => {
+    if (profile?.PassengerID) {
+      fetchTickets();
+    }
+  }, [profile]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -367,20 +386,66 @@ export const Profile = () => {
         const ticketData = tickets.find(t => t.id === ticketId);
         if (ticketData) {
           try {
-            downloadDocument('ticket', {
+            console.log('Данные для генерации документов:', {
               ...ticketData,
               FlightNumber: ticketData.flightNumber,
               FirstName: profile.FirstName,
               LastName: profile.LastName,
               DepartureTime: ticketData.departureTime,
               SeatNumber: ticketData.seatNumber,
+              PASSENGER: {
+                PassengerID: ticketData.PassengerID,
+                FirstName: profile.FirstName,
+                LastName: profile.LastName,
+                Email: profile.Email,
+                Phone: profile.Phone,
+                PassportSeries: profile.PassportSeries,
+                PassportNumber: profile.PassportNumber,
+                Gender: profile.Gender,
+                DateOfBirth: profile.DateOfBirth,
+              },
             });
 
-            downloadDocument('receipt', {
-              ...ticketData,
-              TicketID: ticketData.id,
-              Price: ticketData.price,
-              PurchaseDate: new Date().toISOString(),
+            await downloadDocument({
+              type: 'ticket',
+              data: {
+                ...ticketData,
+                FlightNumber: ticketData.flightNumber,
+                DepartureTime: ticketData.departureTime,
+                SeatNumber: ticketData.seatNumber,
+                PASSENGER: {
+                  PassengerID: ticketData.PassengerID,
+                  FirstName: profile.FirstName,
+                  LastName: profile.LastName,
+                  Email: profile.Email,
+                  Phone: profile.Phone,
+                  PassportSeries: profile.PassportSeries,
+                  PassportNumber: profile.PassportNumber,
+                  Gender: profile.Gender,
+                  DateOfBirth: profile.DateOfBirth,
+                },
+              },
+            });
+
+            await downloadDocument({
+              type: 'receipt',
+              data: {
+                ...ticketData,
+                TicketID: ticketData.id,
+                Price: ticketData.price,
+                PurchaseDate: new Date().toISOString(),
+                PASSENGER: {
+                  PassengerID: ticketData.PassengerID,
+                  FirstName: profile.FirstName,
+                  LastName: profile.LastName,
+                  Email: profile.Email,
+                  Phone: profile.Phone,
+                  PassportSeries: profile.PassportSeries,
+                  PassportNumber: profile.PassportNumber,
+                  Gender: profile.Gender,
+                  DateOfBirth: profile.DateOfBirth,
+                },
+              },
             });
 
             toast.success('Документы успешно сгенерированы');

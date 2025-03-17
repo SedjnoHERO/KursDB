@@ -15,7 +15,7 @@ import {
 import { TableAPI, Supabase } from '@api';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
-import { Button, downloadDocument, generateDocument } from '@components';
+import { Button, downloadDocument } from '@components';
 
 interface AircraftInfo {
   Model: string;
@@ -28,6 +28,45 @@ interface AircraftInfo {
 interface FlightData {
   AIRPLANE: AircraftInfo;
   FlightNumber: string;
+  DepartureTime: string;
+  ArrivalTime: string;
+  DepartureAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+  };
+  ArrivalAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+  };
+}
+
+interface SupabaseFlightData {
+  FlightID: number;
+  FlightNumber: string;
+  DepartureTime: string;
+  ArrivalTime: string;
+  AIRPLANE: {
+    Model: string;
+    Capacity: number;
+    AIRLINE: {
+      Name: string;
+      Country: string;
+    };
+  };
+  DepartureAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+    Country: string;
+  };
+  ArrivalAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+    Country: string;
+  };
 }
 
 export interface ITicketProps {
@@ -66,24 +105,39 @@ export const TicketCard = ({
   } | null>(null);
 
   useEffect(() => {
+    console.log('TicketCard получил билет:', initialTicket);
+    console.log('PassengerID в билете:', initialTicket.PassengerID);
+
     const fetchAircraftInfo = async () => {
-      if (!ticket.flightId) return;
+      if (!initialTicket.flightId) return;
 
       try {
         const { data, error } = await Supabase.from('FLIGHT')
           .select(
             `
             FlightNumber,
+            DepartureTime,
+            ArrivalTime,
             AIRPLANE:AirplaneID (
               Model,
               Capacity,
               AIRLINE:AirlineID (
                 Name
               )
+            ),
+            DepartureAirport:DepartureAirportID (
+              City,
+              Name,
+              Code
+            ),
+            ArrivalAirport:ArrivalAirportID (
+              City,
+              Name,
+              Code
             )
           `,
           )
-          .eq('FlightID', ticket.flightId)
+          .eq('FlightID', initialTicket.flightId)
           .single<FlightData>();
 
         if (error) throw error;
@@ -99,6 +153,9 @@ export const TicketCard = ({
           setTicket(prev => ({
             ...prev,
             flightNumber: data.FlightNumber,
+            departureTime: data.DepartureTime,
+            from: data.DepartureAirport.City,
+            to: data.ArrivalAirport.City,
           }));
         }
       } catch (error) {
@@ -107,7 +164,7 @@ export const TicketCard = ({
     };
 
     fetchAircraftInfo();
-  }, [ticket.flightId]);
+  }, [initialTicket.flightId]);
 
   const searchParams = new URLSearchParams({
     from: ticket.from,
@@ -150,32 +207,52 @@ export const TicketCard = ({
   const handleDocumentGeneration = async (type: 'ticket' | 'receipt') => {
     try {
       console.log('Данные билета перед генерацией:', ticket);
+      console.log('PassengerID из билета:', ticket.PassengerID);
 
       if (!ticket.flightId) {
         toast.error('Отсутствует ID рейса');
         return;
       }
 
-      // Сначала получаем данные о рейсе
+      if (!ticket.PassengerID) {
+        console.error('Отсутствует ID пассажира в билете:', ticket);
+        toast.error('Отсутствует ID пассажира');
+        return;
+      }
+
       const { data: flightData, error: flightError } = await Supabase.from(
         'FLIGHT',
       )
         .select(
           `
+          FlightID,
           FlightNumber,
           DepartureTime,
           ArrivalTime,
-          AIRPLANE (
+          AIRPLANE: AirplaneID (
             Model,
             Capacity,
-            AIRLINE (
-              Name
+            AIRLINE: AirlineID (
+              Name,
+              Country
             )
+          ),
+          DepartureAirport: DepartureAirportID (
+            City,
+            Name,
+            Code,
+            Country
+          ),
+          ArrivalAirport: ArrivalAirportID (
+            City,
+            Name,
+            Code,
+            Country
           )
         `,
         )
         .eq('FlightID', ticket.flightId)
-        .single();
+        .single<SupabaseFlightData>();
 
       if (flightError || !flightData) {
         console.error('Ошибка при получении данных рейса:', flightError);
@@ -183,11 +260,13 @@ export const TicketCard = ({
         return;
       }
 
-      // Затем получаем данные о пассажире
+      console.log('Запрос данных пассажира с ID:', ticket.PassengerID);
+
       const { data: passengerData, error: passengerError } =
         await Supabase.from('PASSENGER')
           .select(
             `
+          PassengerID,
           FirstName,
           LastName,
           Email,
@@ -201,32 +280,71 @@ export const TicketCard = ({
           .eq('PassengerID', ticket.PassengerID)
           .single();
 
-      if (passengerError) {
+      if (passengerError || !passengerData) {
         console.error('Ошибка при получении данных пассажира:', passengerError);
-        // Продолжаем выполнение, так как данные пассажира не критичны
+        toast.error('Не удалось получить данные пассажира');
+        return;
+      }
+
+      const { data: ticketData, error: ticketError } = await Supabase.from(
+        'TICKET',
+      )
+        .select(
+          `
+          TicketID,
+          Status,
+          SeatNumber
+        `,
+        )
+        .eq('TicketID', ticket.id)
+        .single();
+
+      if (ticketError) {
+        console.error('Ошибка при получении данных билета:', ticketError);
+        toast.error('Не удалось получить данные билета');
+        return;
       }
 
       console.log('Полученные данные рейса:', flightData);
       console.log('Полученные данные пассажира:', passengerData);
+      console.log('Полученные данные билета:', ticketData);
 
       const documentData = {
-        TicketID: ticket.id,
         FlightNumber: flightData.FlightNumber,
         DepartureTime: flightData.DepartureTime,
         ArrivalTime: flightData.ArrivalTime,
-        FLIGHT: flightData,
-        PASSENGER: passengerData || null,
-        AIRPLANE: flightData.AIRPLANE,
+        from: flightData.DepartureAirport.City,
+        to: flightData.ArrivalAirport.City,
+        TicketID: ticket.id,
         Price: ticket.price,
-        PurchaseDate: ticket.purchaseDate,
-        SeatNumber: ticket.seatNumber || 'Не указано',
-        from: ticket.from,
-        to: ticket.to,
-        Status: ticket.status,
+        PurchaseDate: new Date().toISOString(),
+        TICKET: {
+          SeatNumber: ticketData.SeatNumber,
+          Status: ticketData.Status,
+        },
+        AIRPLANE: {
+          Model: flightData.AIRPLANE.Model,
+          Capacity: flightData.AIRPLANE.Capacity,
+          AIRLINE: {
+            Name: flightData.AIRPLANE.AIRLINE.Name,
+            Country: flightData.AIRPLANE.AIRLINE.Country,
+          },
+        },
+        PASSENGER: {
+          PassengerID: ticket.PassengerID,
+          FirstName: passengerData.FirstName,
+          LastName: passengerData.LastName,
+          Email: passengerData.Email,
+          Phone: passengerData.Phone,
+          PassportSeries: passengerData.PassportSeries,
+          PassportNumber: passengerData.PassportNumber,
+          Gender: passengerData.Gender,
+          DateOfBirth: passengerData.DateOfBirth,
+        },
       };
 
       console.log('Данные для генерации документа:', documentData);
-      await downloadDocument(type, documentData);
+      await downloadDocument({ type, data: documentData });
       toast.success(
         `${type === 'ticket' ? 'Билет' : 'Чек'} успешно сгенерирован`,
       );
