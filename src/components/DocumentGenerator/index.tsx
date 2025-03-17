@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import * as QRCode from 'qrcode';
 
@@ -7,21 +7,6 @@ interface DocumentGeneratorProps {
   data: any;
 }
 
-// Unicode символы для иконок
-const PLANE_ICON = '✈️';
-const ARROW_ICON = '→';
-
-// Функция для декодирования Base64 в Uint8Array
-const base64ToUint8Array = (base64: string): Uint8Array => {
-  const binaryString = window.atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-};
-
-// Функция для рисования рамки
 const drawBorder = (page: any, margin: number = 10) => {
   const { width, height } = page.getSize();
   page.drawRectangle({
@@ -34,7 +19,6 @@ const drawBorder = (page: any, margin: number = 10) => {
   });
 };
 
-// Функция для рисования горизонтальной линии
 const drawHorizontalLine = (page: any, y: number, margin: number = 10) => {
   const { width } = page.getSize();
   page.drawLine({
@@ -45,7 +29,6 @@ const drawHorizontalLine = (page: any, y: number, margin: number = 10) => {
   });
 };
 
-// Функция для генерации QR-кода
 const generateQRCode = async (text: string): Promise<Uint8Array> => {
   try {
     const qrDataUrl = await QRCode.toDataURL(text, {
@@ -71,31 +54,92 @@ const generateQRCode = async (text: string): Promise<Uint8Array> => {
   }
 };
 
-// Функция для рисования SVG в PDF
-const drawSVG = (
-  page: any,
-  svg: string,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) => {
-  try {
-    const svgDoc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-    const path = svgDoc.querySelector('path')?.getAttribute('d');
+const getUserInfo = (data: any) => {
+  const user = {
+    fullName: 'Не указан',
+    email: 'Не указан',
+    phone: 'Не указан',
+    passport: 'Не указан',
+    role: 'user',
+    gender: 'Не указан',
+    dateOfBirth: 'Не указан',
+  };
 
-    if (path) {
-      page.drawSvgPath(path, {
-        x,
-        y,
-        width,
-        height,
-        color: rgb(0, 0, 0),
-      });
+  if (data.PASSENGER) {
+    if (data.PASSENGER.FirstName && data.PASSENGER.LastName) {
+      user.fullName = `${data.PASSENGER.FirstName} ${data.PASSENGER.LastName}`;
     }
-  } catch (error) {
-    console.error('Ошибка при отрисовке SVG:', error);
+    if (data.PASSENGER.Email) {
+      user.email = data.PASSENGER.Email;
+    }
+    if (data.PASSENGER.Phone) {
+      user.phone = data.PASSENGER.Phone;
+    }
+    if (data.PASSENGER.PassportSeries && data.PASSENGER.PassportNumber) {
+      user.passport = `${data.PASSENGER.PassportSeries}${data.PASSENGER.PassportNumber}`;
+    }
+    if (data.PASSENGER.Gender) {
+      user.gender = data.PASSENGER.Gender === 'Male' ? 'Мужской' : 'Женский';
+    }
+    if (data.PASSENGER.DateOfBirth) {
+      user.dateOfBirth = new Date(
+        data.PASSENGER.DateOfBirth,
+      ).toLocaleDateString('ru-RU');
+    }
+    if (data.PASSENGER.Role) {
+      user.role = data.PASSENGER.Role;
+    }
   }
+
+  if (data.User) {
+    if (data.User.FirstName && data.User.LastName) {
+      user.fullName = `${data.User.FirstName} ${data.User.LastName}`;
+    }
+    if (data.User.Email) {
+      user.email = data.User.Email;
+    }
+    if (data.User.Phone) {
+      user.phone = data.User.Phone;
+    }
+    if (data.User.PassportSeries && data.User.PassportNumber) {
+      user.passport = `${data.User.PassportSeries}${data.User.PassportNumber}`;
+    }
+    if (data.User.Gender) {
+      user.gender = data.User.Gender === 'Male' ? 'Мужской' : 'Женский';
+    }
+    if (data.User.DateOfBirth) {
+      user.dateOfBirth = new Date(data.User.DateOfBirth).toLocaleDateString(
+        'ru-RU',
+      );
+    }
+    if (data.User.Role) {
+      user.role = data.User.Role;
+    }
+  }
+
+  if (data.FirstName && data.LastName) {
+    user.fullName = `${data.FirstName} ${data.LastName}`;
+  }
+  if (data.Email) {
+    user.email = data.Email;
+  }
+  if (data.Phone) {
+    user.phone = data.Phone;
+  }
+  if (data.PassportSeries && data.PassportNumber) {
+    user.passport = `${data.PassportSeries}${data.PassportNumber}`;
+  }
+  if (data.Gender) {
+    user.gender = data.Gender === 'Male' ? 'Мужской' : 'Женский';
+  }
+  if (data.DateOfBirth) {
+    user.dateOfBirth = new Date(data.DateOfBirth).toLocaleDateString('ru-RU');
+  }
+  if (data.Role) {
+    user.role = data.Role;
+  }
+
+  return user;
 };
 
 export const generateDocument = async (
@@ -103,10 +147,18 @@ export const generateDocument = async (
   data: any,
 ) => {
   try {
-    console.log('Начало создания PDF документа:', { type, data });
+    console.log('Начало создания PDF документа. Входные данные:', data);
 
     if (!data.FlightNumber) {
-      throw new Error('Отсутствует номер рейса (FlightNumber)');
+      console.error('Отсутствует номер рейса в данных:', data);
+
+      if (data.FLIGHT && data.FLIGHT.FlightNumber) {
+        data.FlightNumber = data.FLIGHT.FlightNumber;
+      } else if (data.flightNumber) {
+        data.FlightNumber = data.flightNumber;
+      } else {
+        throw new Error('Отсутствует номер рейса (FlightNumber)');
+      }
     }
 
     const pdfDoc = await PDFDocument.create();
@@ -116,7 +168,6 @@ export const generateDocument = async (
     const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
     const customFont = await pdfDoc.embedFont(fontBytes);
 
-    // Устанавливаем разные размеры для билета и чека
     const pageSize: [number, number] =
       type === 'ticket' ? [600, 280] : [300, 500];
 
@@ -124,10 +175,8 @@ export const generateDocument = async (
     page.setFont(customFont);
 
     if (type === 'ticket') {
-      // Рисуем рамку
       drawBorder(page);
 
-      // Заголовок с подложкой
       const headerHeight = 40;
       page.drawRectangle({
         x: 10,
@@ -137,7 +186,6 @@ export const generateDocument = async (
         color: rgb(0.95, 0.95, 0.95),
       });
 
-      // Логотип авиакомпании с иконкой
       page.drawText(`AeroControl`, {
         x: 20,
         y: page.getHeight() - 35,
@@ -154,16 +202,13 @@ export const generateDocument = async (
         color: rgb(0, 0, 0),
       });
 
-      // Линия под заголовком
       drawHorizontalLine(page, page.getHeight() - 50);
 
-      // Основная информация в две колонки
       const leftColumnX = 20;
       const rightColumnX = page.getWidth() / 2 + 20;
       let leftYPos = page.getHeight() - 80;
       let rightYPos = page.getHeight() - 80;
 
-      // Левая колонка с маршрутом
       const leftColumnInfo = [
         'ИНФОРМАЦИЯ О РЕЙСЕ',
         `Номер рейса: ${data.FlightNumber}`,
@@ -173,27 +218,15 @@ export const generateDocument = async (
         `${data.from} - ${data.to}`,
       ];
 
-      // Правая колонка
+      const userInfo = getUserInfo(data);
       const rightColumnInfo = [
         'ИНФОРМАЦИЯ О ПАССАЖИРЕ',
-        `Пассажир: ${(() => {
-          if (data.User?.FirstName && data.User?.LastName) {
-            return `${data.User.FirstName} ${data.User.LastName}`;
-          }
-          if (data.firstName && data.lastName) {
-            return `${data.firstName} ${data.lastName}`;
-          }
-          if (data.User?.Email) {
-            return data.User.Email;
-          }
-          return 'Не указан';
-        })()}`,
+        `Пассажир: ${userInfo.fullName}`,
         `Место: ${data.SeatNumber || 'Не указано'}`,
         '',
         `Статус: ${data.Status || 'Оплачен'}`,
       ];
 
-      // Отрисовка левой колонки
       leftColumnInfo.forEach((line, index) => {
         const isBold = index === 0 || index === 4;
         page.drawText(line, {
@@ -206,7 +239,6 @@ export const generateDocument = async (
         leftYPos -= isBold ? 20 : 15;
       });
 
-      // Отрисовка правой колонки
       rightColumnInfo.forEach((line, index) => {
         const isBold = index === 0 || index === 4;
         page.drawText(line, {
@@ -219,15 +251,12 @@ export const generateDocument = async (
         rightYPos -= isBold ? 20 : 15;
       });
 
-      // QR-код для билета
       const qrSize = 50;
       const ticketUrl = `https://kursdbapp.netlify.app/${data.id || data.TicketID}`;
 
       try {
-        // Генерируем QR-код
         const qrCodeImage = await generateQRCode(ticketUrl);
 
-        // Встраиваем QR-код в PDF
         const qrImage = await pdfDoc.embedPng(qrCodeImage);
         const qrDims = qrImage.scale(qrSize / qrImage.width);
 
@@ -239,7 +268,6 @@ export const generateDocument = async (
         });
       } catch (error) {
         console.error('Ошибка при добавлении QR-кода:', error);
-        // Если не удалось сгенерировать QR-код, рисуем прямоугольник
         page.drawRectangle({
           x: page.getWidth() - qrSize - 20,
           y: 20,
@@ -249,7 +277,6 @@ export const generateDocument = async (
         });
       }
 
-      // Подпись под QR-кодом
       const qrText = 'Сканируйте для проверки';
       const qrTextWidth = customFont.widthOfTextAtSize(qrText, 8);
       page.drawText(qrText, {
@@ -260,7 +287,6 @@ export const generateDocument = async (
         color: rgb(0, 0, 0),
       });
 
-      // Нижний колонтитул
       drawHorizontalLine(page, 100);
 
       page.drawText(
@@ -285,12 +311,10 @@ export const generateDocument = async (
         },
       );
     } else {
-      // Рисуем рамку для чека
       drawBorder(page);
 
       const centerX = page.getWidth() / 2;
 
-      // Заголовок чека с подложкой
       page.drawRectangle({
         x: 10,
         y: page.getHeight() - 50,
@@ -299,7 +323,6 @@ export const generateDocument = async (
         color: rgb(0.95, 0.95, 0.95),
       });
 
-      // Заголовок чека
       const title = 'ЧЕК ОБ ОПЛАТЕ';
       const titleWidth = customFont.widthOfTextAtSize(title, 14);
       page.drawText(title, {
@@ -310,7 +333,6 @@ export const generateDocument = async (
         color: rgb(0, 0, 0),
       });
 
-      // Линия под заголовком
       drawHorizontalLine(page, page.getHeight() - 50);
 
       const receiptInfo = [
@@ -347,15 +369,12 @@ export const generateDocument = async (
         yPos -= isBold ? 20 : 15;
       });
 
-      // QR-код для чека
       const qrSize = 40;
       const receiptUrl = `https://kursdbapp.netlify.app/${data.id || data.TicketID}`;
 
       try {
-        // Генерируем QR-код
         const qrCodeImage = await generateQRCode(receiptUrl);
 
-        // Встраиваем QR-код в PDF
         const qrImage = await pdfDoc.embedPng(qrCodeImage);
         const qrDims = qrImage.scale(qrSize / qrImage.width);
 

@@ -46,6 +46,7 @@ export interface ITicketProps {
   passengerName?: string;
   departureTime?: string;
   purchaseDate?: string;
+  PassengerID?: string | number;
 }
 
 interface ITicketCardProps {
@@ -155,31 +156,73 @@ export const TicketCard = ({
         return;
       }
 
+      // Сначала получаем данные о рейсе
       const { data: flightData, error: flightError } = await Supabase.from(
         'FLIGHT',
       )
-        .select('FlightNumber')
+        .select(
+          `
+          FlightNumber,
+          DepartureTime,
+          ArrivalTime,
+          AIRPLANE (
+            Model,
+            Capacity,
+            AIRLINE (
+              Name
+            )
+          )
+        `,
+        )
         .eq('FlightID', ticket.flightId)
         .single();
 
       if (flightError || !flightData) {
-        console.error('Ошибка при получении номера рейса:', flightError);
-        toast.error('Не удалось получить номер рейса');
+        console.error('Ошибка при получении данных рейса:', flightError);
+        toast.error('Не удалось получить данные рейса');
         return;
       }
 
+      // Затем получаем данные о пассажире
+      const { data: passengerData, error: passengerError } =
+        await Supabase.from('PASSENGER')
+          .select(
+            `
+          FirstName,
+          LastName,
+          Email,
+          Phone,
+          PassportSeries,
+          PassportNumber,
+          Gender,
+          DateOfBirth
+        `,
+          )
+          .eq('PassengerID', ticket.PassengerID)
+          .single();
+
+      if (passengerError) {
+        console.error('Ошибка при получении данных пассажира:', passengerError);
+        // Продолжаем выполнение, так как данные пассажира не критичны
+      }
+
+      console.log('Полученные данные рейса:', flightData);
+      console.log('Полученные данные пассажира:', passengerData);
+
       const documentData = {
-        ...ticket,
-        FlightNumber: flightData.FlightNumber,
-        FirstName: ticket.passengerName?.split(' ')[0] || 'Пассажир',
-        LastName: ticket.passengerName?.split(' ')[1] || '',
-        DepartureTime: ticket.departureTime || `${ticket.date} ${ticket.time}`,
         TicketID: ticket.id,
+        FlightNumber: flightData.FlightNumber,
+        DepartureTime: flightData.DepartureTime,
+        ArrivalTime: flightData.ArrivalTime,
+        FLIGHT: flightData,
+        PASSENGER: passengerData || null,
+        AIRPLANE: flightData.AIRPLANE,
         Price: ticket.price,
-        PurchaseDate: ticket.purchaseDate || new Date().toISOString(),
+        PurchaseDate: ticket.purchaseDate,
         SeatNumber: ticket.seatNumber || 'Не указано',
         from: ticket.from,
         to: ticket.to,
+        Status: ticket.status,
       };
 
       console.log('Данные для генерации документа:', documentData);
