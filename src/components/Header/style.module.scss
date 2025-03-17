@@ -5,13 +5,11 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: transparent;
-  transition: background 0.3s;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
 
   &.adminHeader {
-    background: linear-gradient(to right, var(--primary), var(--primary-dark));
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
     .headerContent {
       max-width: 1400px;
       margin: 0 auto;
@@ -27,14 +25,20 @@
 
       .logo {
         color: white;
-        font-weight: 600;
-        font-size: 22px;
+        font-weight: 700;
+        font-size: 24px;
+        letter-spacing: 0.5px;
+        transition: transform 0.2s ease;
+
+        &:hover {
+          transform: scale(1.05);
+        }
       }
 
       .nav {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 1.5rem;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -46,24 +50,42 @@
         }
 
         .navItem {
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 0.95rem;
+          padding: 0.6rem 1.2rem;
+          border-radius: 8px;
+          color: rgba(255, 255, 255, 0.85);
+          font-size: 1rem;
+          font-weight: 500;
           cursor: pointer;
           white-space: nowrap;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
 
-          @media (hover: hover) {
-            &:hover {
-              color: white;
-              background: rgba(255, 255, 255, 0.1);
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+          }
+
+          &:hover {
+            color: white;
+            transform: translateY(-2px);
+
+            &::before {
+              transform: translateX(0);
             }
           }
 
           &.active {
             color: white;
             background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
           }
         }
       }
@@ -72,142 +94,188 @@
 }
 
 .defaultNav {
-  width: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background: color-mix(in srgb, var(--primary) 90%, transparent);
-  backdrop-filter: blur(8px);
-  transition: all 0.3s ease;
-
-  &.scrolled {
-    background: color-mix(in srgb, var(--primary) 95%, transparent);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
   .contentContainer {
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 2rem;
-    height: 70px;
+    height: 75px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 0 2rem;
 
     @media (max-width: 768px) {
-      padding: 0.75rem 1rem;
+      height: 65px;
+      padding: 0 1.25rem;
     }
   }
 
   .logo {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     color: white;
     text-decoration: none;
-    font-size: 1.25rem;
-    font-weight: 500;
-    z-index: 1001;
+    font-size: 1.5rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    width: 25%;
+
+    &:hover {
+      transform: scale(1.05);
+      opacity: 0.95;
+    }
 
     svg {
-      font-size: 1.5rem;
+      width: 32px;
+      height: 32px;
+      transition: transform 0.3s ease;
+      color: white;
     }
+
+    &:hover svg {
+      transform: rotate(15deg);
+    }
+  }
+
+  .navLinks {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+
+    @media (max-width: 768px) {
+      display: none;
+    }
+
+    a {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      padding: 0.5rem 0;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: white;
+        transition: width 0.3s ease;
+        border-radius: 2px;
+      }
+
+      &:hover {
+        color: white;
+        transform: translateY(-2px);
+        
+        &::after {
+          width: 100%;
+        }
+      }
+
+      &.active {
+        color: white;
+        
+        &::after {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .rightSection {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 25%;
+    gap: 1rem;
   }
 
   .mobileMenuButton {
     display: none;
     background: none;
     border: none;
-    padding: 0.5rem;
     color: white;
     cursor: pointer;
+    padding: 0.5rem;
     font-size: 1.5rem;
-    transition: opacity 0.2s;
-    z-index: 1001;
+    transition: all 0.3s ease;
+    border-radius: 8px;
 
-    @media (max-width: 768px) {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.1);
     }
 
-    @media (hover: hover) {
+    @media (max-width: 768px) {
+      display: block;
+    }
+  }
+
+  .mobileMenu {
+    display: none;
+    position: fixed;
+    top: 65px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+
+    &.open {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    @media (min-width: 769px) {
+      display: none !important;
+    }
+
+    a {
+      display: block;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      padding: 1rem 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      border-radius: 12px;
+      margin-bottom: 0.5rem;
+
       &:hover {
-        opacity: 0.8;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        transform: translateX(5px);
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
       }
     }
   }
 
-  .navLinks {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
+  &.hidden {
+    transform: translateY(-100%);
+  }
+}
 
-    a {
-      color: rgba(255, 255, 255, 0.9);
-      text-decoration: none;
-      font-weight: 500;
-      transition: all 0.2s;
-
-      @media (hover: hover) {
-        &:hover {
-          color: white;
-        }
-      }
-    }
-
-    @media (max-width: 768px) {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: var(--primary);
-      padding: 5rem 1.5rem 1.5rem;
-      flex-direction: column;
-      align-items: center;
-      gap: 2rem;
-      transform: translateX(100%);
-      transition: transform 0.3s ease-in-out;
-      z-index: 1000;
-
-      &.open {
-        display: flex;
-        transform: translateX(0);
-
-        a {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      a {
-        color: white;
-        font-size: 1.25rem;
-        opacity: 0;
-        transform: translateX(20px);
-        transition: all 0.3s ease;
-        width: 100%;
-        text-align: center;
-        padding: 0.75rem;
-
-        @for $i from 1 through 4 {
-          &:nth-child(#{$i}) {
-            transition-delay: #{$i * 0.1}s;
-          }
-        }
-
-        @media (hover: hover) {
-          &:hover {
-            background: rgba(255, 255, 255, 0.1);
-          }
-        }
-      }
-    }
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -351,87 +419,46 @@
   }
 
   .navLinks {
+    display: none;
+  }
+
+  .mobileMenu {
+    display: none;
     position: fixed;
-    top: 0;
+    top: 65px;
     left: 0;
     right: 0;
-    bottom: 0;
-    height: 100vh;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.98);
-    backdrop-filter: blur(10px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 2rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     z-index: 999;
 
     &.open {
-      opacity: 1;
-      pointer-events: auto;
-
-      a {
-        transform: translateY(0);
-        opacity: 1;
-      }
-
-      .authButton {
-        transform: translateY(0);
-        opacity: 1;
-      }
+      display: block;
+      animation: slideDown 0.3s ease;
     }
 
     a {
-      font-size: 1.25rem;
-      font-weight: 500;
-      transform: translateY(30px);
-      opacity: 0;
-      width: 100%;
-      max-width: 300px;
-      text-align: center;
-      padding: 0.75rem 0;
-      margin: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-      @media (hover: hover) {
-        &:hover {
-          background: rgba(37, 99, 235, 0.1);
-        }
-      }
-
-      &::after {
-        display: none;
-      }
-
-      @for $i from 1 through 5 {
-        &:nth-child(#{$i}) {
-          transition-delay: #{$i * 0.08}s;
-        }
-      }
-    }
-
-    .authButton {
-      transform: translateY(30px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      transition-delay: 0.4s;
-      margin-top: 1rem;
-      width: 200px;
-      padding: 0.75rem 0;
-      border: 2px solid #2563eb;
-      border-radius: 8px;
-      font-weight: 500;
+      display: block;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      padding: 1rem 1.25rem;
       font-size: 1.1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      border-radius: 12px;
+      margin-bottom: 0.5rem;
 
-      @media (hover: hover) {
-        &:hover {
-          background: rgba(37, 99, 235, 0.1);
-        }
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        transform: translateX(5px);
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
       }
     }
   }
@@ -541,6 +568,166 @@
         text-align: center;
         padding: 0.75rem;
         font-size: 1rem;
+      }
+    }
+  }
+}
+
+.minimal {
+  .contentContainer {
+    height: 56px;
+    padding: 0 1.75rem;
+
+    @media (max-width: 768px) {
+      height: 52px;
+      padding: 0 1.25rem;
+    }
+  }
+
+  .logo {
+    font-size: 1.2rem;
+    font-weight: 500;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+      
+      svg {
+        width: 22px;
+        height: 22px;
+      }
+    }
+  }
+
+  .navLinks {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+      display: flex !important;
+      position: static;
+      background: none;
+      padding: 0;
+      height: auto;
+      width: auto;
+      transform: none;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .mobileMenuButton {
+    display: none;
+  }
+
+  .mobileMenu {
+    display: none;
+  }
+
+  :global {
+    .profileButton {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      border: none !important;
+      padding: 0.6rem !important;
+      cursor: pointer !important;
+      color: white !important;
+      border-radius: 10px !important;
+      transition: all 0.2s ease !important;
+      backdrop-filter: blur(8px) !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25) !important;
+        transform: translateY(-1px) !important;
+      }
+
+      &:active {
+        transform: translateY(0) !important;
+      }
+
+      svg {
+        width: 24px !important;
+        height: 24px !important;
+      }
+
+      @media (max-width: 768px) {
+        padding: 0.5rem !important;
+        
+        svg {
+          width: 22px !important;
+          height: 22px !important;
+        }
+      }
+    }
+
+    .profileMenu {
+      background: rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: blur(12px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+      animation: menuAppear 0.2s ease !important;
+
+      @media (max-width: 768px) {
+        border-radius: 16px 16px 0 0 !important;
+        padding: 1.25rem !important;
+        border-bottom: none !important;
+        animation: slideUp 0.3s ease !important;
+      }
+
+      .userInfo {
+        border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+        padding-bottom: 1rem !important;
+        margin-bottom: 1rem !important;
+
+        @media (max-width: 768px) {
+          text-align: center !important;
+        }
+
+        span {
+          color: white !important;
+          font-size: 1rem !important;
+
+          &.role {
+            color: rgba(255, 255, 255, 0.7) !important;
+            font-size: 0.9rem !important;
+            margin-top: 0.35rem !important;
+          }
+        }
+      }
+
+      button {
+        color: white !important;
+        font-weight: 500 !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 8px !important;
+        font-size: 0.95rem !important;
+        transition: all 0.2s ease !important;
+
+        @media (max-width: 768px) {
+          text-align: center !important;
+          padding: 1rem !important;
+          font-size: 1rem !important;
+        }
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.15) !important;
+          transform: translateY(-1px) !important;
+        }
+
+        &:active {
+          transform: translateY(0) !important;
+        }
+
+        &:not(:last-child) {
+          margin-bottom: 0.5rem !important;
+        }
       }
     }
   }

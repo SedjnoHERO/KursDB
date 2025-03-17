@@ -22,10 +22,9 @@ export const TABLE_TRANSLATIONS: TableColumns = {
     name: 'Самолёты',
     columns: {
       AirplaneID: 'ID',
-      AirlineID: 'ID авиакомпании',
+      AirlineID: 'Авиакомпания',
       Model: 'Модель',
-      Capacity: 'Вместимость',
-      airline: 'Авиакомпания'
+      Capacity: 'Вместимость'
     }
   },
   AIRLINE: {
@@ -41,28 +40,23 @@ export const TABLE_TRANSLATIONS: TableColumns = {
     columns: {
       FlightID: 'ID',
       FlightNumber: 'Номер рейса',
-      AirplaneID: 'ID самолета',
-      DepartureAirportID: 'ID аэропорта вылета',
-      ArrivalAirportID: 'ID аэропорта прибытия',
+      AirplaneID: 'Самолет',
+      DepartureAirportID: 'Аэропорт вылета',
+      ArrivalAirportID: 'Аэропорт прибытия',
       DepartureTime: 'Время вылета',
-      ArrivalTime: 'Время прибытия',
-      airplane: 'Самолет',
-      departureAirport: 'Аэропорт вылета',
-      arrivalAirport: 'Аэропорт прибытия'
+      ArrivalTime: 'Время прибытия'
     }
   },
   TICKET: {
     name: 'Билеты',
     columns: {
       TicketID: 'ID',
-      FlightID: 'ID рейса',
-      PassengerID: 'ID пассажира',
+      FlightID: 'Рейс',
+      PassengerID: 'Пассажир',
       PurchaseDate: 'Дата покупки',
       SeatNumber: 'Номер места',
       Price: 'Цена',
-      Status: 'Статус',
-      flight: 'Рейс',
-      passenger: 'Пассажир'
+      Status: 'Статус'
     }
   },
   PASSENGER: {

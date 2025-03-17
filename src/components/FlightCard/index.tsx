@@ -8,6 +8,7 @@ interface FlightCardProps {
   limit?: number;
   offset?: number;
   onTotalCountUpdate?: (count: number) => void;
+  flights?: Flight[];
 }
 
 interface Flight {
@@ -72,13 +73,19 @@ export const FlightCard = ({
   amount = 3,
   offset = 0,
   onTotalCountUpdate,
+  flights: providedFlights,
 }: FlightCardProps) => {
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!providedFlights);
 
   useEffect(() => {
+    if (providedFlights) {
+      setFlights(providedFlights);
+      setIsLoading(false);
+      return;
+    }
     fetchFlights();
-  }, [limit, offset]);
+  }, [limit, offset, providedFlights]);
 
   const fetchFlights = async () => {
     try {
@@ -162,7 +169,7 @@ export const FlightCard = ({
     <div className={`${styles.container} ${styles[`grid-${amount}`]}`}>
       {flights.map(flight => (
         <Link
-          to={`/ticket/${flight.id}`}
+          to={`/ticket/${flight.id}?from=${encodeURIComponent(flight.departure_city)}&to=${encodeURIComponent(flight.arrival_city)}&date=${encodeURIComponent(flight.departure_time)}&price=${flight.price}&airline=${encodeURIComponent(flight.airline_name)}&aircraft=${encodeURIComponent(flight.aircraft_name)}`}
           key={flight.id}
           className={styles.card}
         >

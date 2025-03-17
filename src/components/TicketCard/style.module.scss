@@ -1,0 +1,227 @@
+.ticketCard {
+  background: var(--background-light);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-primary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-color);
+  }
+
+  &.booked {
+    border-left: 4px solid #ffa726;
+  }
+
+  &.paid {
+    border-left: 4px solid #66bb6a;
+  }
+
+  &.cancelled {
+    border-left: 4px solid #ef5350;
+    opacity: 0.7;
+  }
+
+  .ticketInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+
+    .route {
+      h3 {
+        font-size: 18px;
+        margin: 0 0 8px;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        svg {
+          color: var(--primary-color);
+        }
+      }
+
+      p {
+        margin: 0;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        svg {
+          margin-right: 4px;
+        }
+      }
+    }
+
+    .price {
+      text-align: right;
+
+      p {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0 0 8px;
+        color: var(--text-primary);
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: var(--background-secondary);
+
+        &.booked {
+          color: #ffa726;
+        }
+
+        &.paid {
+          color: #66bb6a;
+        }
+
+        &.cancelled {
+          color: #ef5350;
+        }
+
+        svg {
+          font-size: 16px;
+        }
+      }
+    }
+  }
+
+  .ticketActions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 15px;
+    border-top: 1px solid #eee;
+
+    .button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      svg {
+        font-size: 16px;
+      }
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+    }
+
+    .payButton {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+
+      &:hover {
+        background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+      }
+    }
+
+    .cancelButton {
+      background: linear-gradient(135deg, #ff4b4b 0%, #e63939 100%);
+      color: white;
+
+      &:hover {
+        background: linear-gradient(135deg, #e63939 0%, #d63333 100%);
+      }
+    }
+  }
+}
+
+.ticketContent {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 15px;
+  border-top: 1px solid #eee;
+
+  .button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+
+    svg {
+      font-size: 16px;
+    }
+
+    &:hover {
+      background: #f8f8f8;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+  }
+
+  .documentButton {
+    background: linear-gradient(135deg, #6b8afd 0%, #4466f2 100%);
+    color: white;
+    border: none;
+
+    &:hover {
+      background: linear-gradient(135deg, #5d7cf9 0%, #3557f2 100%);
+    }
+
+    svg {
+      transition: transform 0.2s ease;
+    }
+
+    &:hover svg {
+      transform: scale(1.1);
+    }
+  }
+} 

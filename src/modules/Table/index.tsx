@@ -12,15 +12,79 @@ import {
   FaTrash,
   FaFilter,
   FaSort,
+  FaFileAlt,
+  FaReceipt,
 } from 'react-icons/fa';
-import { Button, Modal, Skeleton, Selector } from '@components';
-import { TableAPI, EntityType } from '@api';
-import { TABLE_TRANSLATIONS, VALUE_TRANSLATIONS } from '@config';
+import {
+  Button,
+  Modal,
+  Skeleton,
+  Selector,
+  generateDocument,
+  downloadDocument,
+} from '@components';
+import { TableAPI, Supabase, EntityType } from '@api';
+import {
+  TABLE_TRANSLATIONS,
+  VALUE_TRANSLATIONS,
+  TABLE_FILTERS,
+  FilterConfig,
+  Tooltip,
+  getFieldTooltip,
+} from '@config';
 import { toast } from 'sonner';
+import { Filters, PhoneInput } from './components';
 import styles from './style.module.scss';
 
 interface ITableProps {
   type: EntityType;
+}
+
+interface SupabaseFlightData {
+  FlightID: number;
+  FlightNumber: string;
+  DepartureTime: string;
+  ArrivalTime: string;
+  AIRPLANE: {
+    Model: string;
+    Capacity: number;
+    AIRLINE: {
+      Name: string;
+      Country: string;
+    };
+  };
+  DepartureAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+    Country: string;
+  };
+  ArrivalAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+    Country: string;
+  };
+}
+
+interface SupabasePassengerData {
+  PassengerID: number;
+  FirstName: string;
+  LastName: string;
+  Email: string;
+  Phone: string;
+  PassportSeries: string;
+  PassportNumber: string;
+  Gender: string;
+  DateOfBirth: string;
+}
+
+interface SupabaseTicketData {
+  TicketID: number;
+  Status: string;
+  SeatNumber: string;
+  Price: number;
+  PurchaseDate: string;
 }
 
 export const TableComponent = ({ type }: ITableProps) => {
@@ -40,6 +104,26 @@ export const TableComponent = ({ type }: ITableProps) => {
     key: string | null;
     direction: 'asc' | 'desc';
   }>({ key: null, direction: 'asc' });
+  const [relatedData, setRelatedData] = useState<{
+    flights: Record<string, string>;
+    passengers: Record<string, string>;
+    airplanes: Record<string, string>;
+    airports: Record<string, string>;
+    airlines: Record<string, string>;
+  }>({
+    flights: {},
+    passengers: {},
+    airplanes: {},
+    airports: {},
+    airlines: {},
+  });
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+  const [rangeFilters, setRangeFilters] = useState<Record<string, boolean>>({});
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const currentTypeRef = useRef(type);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -60,7 +144,8 @@ export const TableComponent = ({ type }: ITableProps) => {
     setSelectedRow(null);
     setFormData({});
     setSearchQuery('');
-    setSelectedFilters({});
+    setActiveFilters({});
+    setRangeFilters({});
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
     setIsDeleteModalOpen(false);
@@ -105,11 +190,65 @@ export const TableComponent = ({ type }: ITableProps) => {
     }
   }, [type]);
 
+  const fetchRelatedData = useCallback(async () => {
+    try {
+      const [flights, passengers, airplanes, airports, airlines] =
+        await Promise.all([
+          TableAPI.fetchData('FLIGHT'),
+          TableAPI.fetchData('PASSENGER'),
+          TableAPI.fetchData('AIRPLANE'),
+          TableAPI.fetchData('AIRPORT'),
+          TableAPI.fetchData('AIRLINE'),
+        ]);
+
+      setRelatedData({
+        flights: flights.reduce(
+          (acc, flight) => ({
+            ...acc,
+            [flight.FlightID]: flight.FlightNumber,
+          }),
+          {},
+        ),
+        passengers: passengers.reduce(
+          (acc, passenger) => ({
+            ...acc,
+            [passenger.PassengerID]: `${passenger.FirstName} ${passenger.LastName}`,
+          }),
+          {},
+        ),
+        airplanes: airplanes.reduce(
+          (acc, airplane) => ({
+            ...acc,
+            [airplane.AirplaneID]: airplane.Model,
+          }),
+          {},
+        ),
+        airports: airports.reduce(
+          (acc, airport) => ({
+            ...acc,
+            [airport.AirportID]: `${airport.City} (${airport.Name})`,
+          }),
+          {},
+        ),
+        airlines: airlines.reduce(
+          (acc, airline) => ({
+            ...acc,
+            [airline.AirlineID]: airline.Name,
+          }),
+          {},
+        ),
+      });
+    } catch (error) {
+      console.error('Error fetching related data:', error);
+    }
+  }, []);
+
   useEffect(() => {
     currentTypeRef.current = type;
     resetState();
     setCurrentPage(1);
     fetchTableData();
+    fetchRelatedData();
   }, [type]);
 
   const sortedData = useMemo(() => {
@@ -130,35 +269,301 @@ export const TableComponent = ({ type }: ITableProps) => {
     });
   }, [data, sortConfig]);
 
+  const handleFilterChange = (
+    field: string,
+    value: any,
+    isRange: boolean = false,
+  ) => {
+    if (isRange) {
+      setActiveFilters(prev => ({
+        ...prev,
+        [`${field}From`]: value.from,
+        [`${field}To`]: value.to,
+      }));
+    } else {
+      setActiveFilters(prev => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
+
+  const handleRangeToggle = (field: string) => {
+    setRangeFilters(prev => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+    // Сбрасываем значения при переключении режима
+    setActiveFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[field];
+      delete newFilters[`${field}From`];
+      delete newFilters[`${field}To`];
+      return newFilters;
+    });
+  };
+
+  const handleFilterReset = () => {
+    setActiveFilters({});
+    setRangeFilters({});
+  };
+
   const filteredData = useMemo(() => {
-    return sortedData.filter(row =>
-      Object.entries(selectedFilters).every(([column, filterValue]) =>
-        filterValue ? String(row[column]) === filterValue : true,
-      ),
-    );
-  }, [sortedData, selectedFilters]);
+    return sortedData.filter(row => {
+      // Применяем только фильтры
+      return Object.entries(activeFilters).every(([field, value]) => {
+        if (!value) return true;
+
+        const filterConfig = TABLE_FILTERS[type].find(
+          (f: FilterConfig) => f.field === field || field.startsWith(f.field),
+        );
+
+        if (!filterConfig) return true;
+
+        // Проверяем, является ли поле частью диапазона
+        const isRangeField = field.endsWith('From') || field.endsWith('To');
+        const baseField = isRangeField ? field.slice(0, -4) : field;
+
+        // Если это поле диапазона, проверяем только если есть оба значения
+        if (isRangeField) {
+          const fromValue = activeFilters[`${baseField}From`];
+          const toValue = activeFilters[`${baseField}To`];
+
+          // Если нет обоих значений диапазона, пропускаем проверку
+          if (!fromValue && !toValue) return true;
+
+          const rowValue = row[baseField];
+
+          if (filterConfig.type === 'date') {
+            const rowDate = new Date(rowValue);
+            const fromDate = fromValue ? new Date(fromValue) : null;
+            const toDate = toValue ? new Date(toValue) : null;
+
+            if (fromDate && toDate) {
+              return rowDate >= fromDate && rowDate <= toDate;
+            } else if (fromDate) {
+              return rowDate >= fromDate;
+            } else if (toDate) {
+              return rowDate <= toDate;
+            }
+          } else if (filterConfig.type === 'number') {
+            const numRowValue = Number(rowValue);
+            const fromNum = fromValue ? Number(fromValue) : null;
+            const toNum = toValue ? Number(toValue) : null;
+
+            if (fromNum !== null && toNum !== null) {
+              return numRowValue >= fromNum && numRowValue <= toNum;
+            } else if (fromNum !== null) {
+              return numRowValue >= fromNum;
+            } else if (toNum !== null) {
+              return numRowValue <= toNum;
+            }
+          }
+        }
+
+        // Для обычных фильтров
+        switch (filterConfig.type) {
+          case 'select':
+            return row[filterConfig.field] === value;
+          case 'date':
+            const rowDate = new Date(row[filterConfig.field]);
+            const filterDate = new Date(value);
+            return rowDate.toDateString() === filterDate.toDateString();
+          case 'number':
+            const numValue = Number(value);
+            const numRowValue = Number(row[filterConfig.field]);
+            return numRowValue === numValue;
+          case 'text':
+            return String(row[filterConfig.field])
+              .toLowerCase()
+              .includes(String(value).toLowerCase());
+          default:
+            return true;
+        }
+      });
+    });
+  }, [sortedData, activeFilters, type]);
+
+  const handleDocumentGeneration = async (
+    row: any,
+    type: 'ticket' | 'receipt',
+  ) => {
+    try {
+      if (!row.FlightID) {
+        toast.error('Отсутствует ID рейса');
+        return;
+      }
+
+      if (!row.PassengerID) {
+        toast.error('Отсутствует ID пассажира');
+        return;
+      }
+
+      const { data: flightData, error: flightError } = await Supabase.from(
+        'FLIGHT',
+      )
+        .select(
+          `
+          FlightID,
+          FlightNumber,
+          DepartureTime,
+          ArrivalTime,
+          AIRPLANE: AirplaneID (
+            Model,
+            Capacity,
+            AIRLINE: AirlineID (
+              Name,
+              Country
+            )
+          ),
+          DepartureAirport: DepartureAirportID (
+            City,
+            Name,
+            Code,
+            Country
+          ),
+          ArrivalAirport: ArrivalAirportID (
+            City,
+            Name,
+            Code,
+            Country
+          )
+        `,
+        )
+        .eq('FlightID', row.FlightID)
+        .single<SupabaseFlightData>();
+
+      if (flightError || !flightData) {
+        toast.error('Не удалось получить данные рейса');
+        return;
+      }
+
+      const { data: passengerData, error: passengerError } =
+        await Supabase.from('PASSENGER')
+          .select(
+            `
+          PassengerID,
+          FirstName,
+          LastName,
+          Email,
+          Phone,
+          PassportSeries,
+          PassportNumber,
+          Gender,
+          DateOfBirth
+        `,
+          )
+          .eq('PassengerID', row.PassengerID)
+          .single<SupabasePassengerData>();
+
+      if (passengerError || !passengerData) {
+        toast.error('Не удалось получить данные пассажира');
+        return;
+      }
+
+      const { data: ticketData, error: ticketError } = await Supabase.from(
+        'TICKET',
+      )
+        .select(
+          `
+          TicketID,
+          Status,
+          SeatNumber,
+          Price,
+          PurchaseDate
+        `,
+        )
+        .eq('TicketID', row.TicketID)
+        .single<SupabaseTicketData>();
+
+      if (ticketError || !ticketData) {
+        toast.error('Не удалось получить данные билета');
+        return;
+      }
+
+      const documentData = {
+        FlightNumber: flightData.FlightNumber,
+        DepartureTime: flightData.DepartureTime,
+        ArrivalTime: flightData.ArrivalTime,
+        from: flightData.DepartureAirport.City,
+        to: flightData.ArrivalAirport.City,
+        TicketID: row.TicketID,
+        Price: ticketData.Price,
+        PurchaseDate: ticketData.PurchaseDate || new Date().toISOString(),
+        TICKET: {
+          SeatNumber: ticketData.SeatNumber,
+          Status: ticketData.Status,
+        },
+        AIRPLANE: {
+          Model: flightData.AIRPLANE.Model,
+          Capacity: flightData.AIRPLANE.Capacity,
+          AIRLINE: {
+            Name: flightData.AIRPLANE.AIRLINE.Name,
+            Country: flightData.AIRPLANE.AIRLINE.Country,
+          },
+        },
+        PASSENGER: {
+          PassengerID: passengerData.PassengerID,
+          FirstName: passengerData.FirstName,
+          LastName: passengerData.LastName,
+          Email: passengerData.Email,
+          Phone: passengerData.Phone,
+          PassportSeries: passengerData.PassportSeries,
+          PassportNumber: passengerData.PassportNumber,
+          Gender: passengerData.Gender,
+          DateOfBirth: passengerData.DateOfBirth,
+        },
+      };
+
+      await downloadDocument({ type, data: documentData });
+      toast.success(
+        `${type === 'ticket' ? 'Билет' : 'Чек'} успешно сгенерирован`,
+      );
+    } catch (error) {
+      console.error('Ошибка при генерации документа:', error);
+      toast.error('Не удалось сгенерировать документ');
+    }
+  };
 
   const renderActionButtons = (row: any) => (
     <td className={styles.actions}>
-      <Button
-        variant="outline"
-        leftIcon={<FaEdit />}
-        label="Изменить"
-        onClick={() => {
-          setSelectedRow(row);
-          setFormData(row);
-          setIsEditModalOpen(true);
-        }}
-      />
-      <Button
-        variant="outline"
-        leftIcon={<FaTrash />}
-        label="Удалить"
-        onClick={() => {
-          setSelectedRow(row);
-          setIsDeleteModalOpen(true);
-        }}
-      />
+      <div className={styles.mainActions}>
+        <Button
+          variant="outline"
+          leftIcon={<FaEdit />}
+          label="Изменить"
+          onClick={() => {
+            setSelectedRow(row);
+            setFormData(row);
+            setIsEditModalOpen(true);
+          }}
+        />
+        <Button
+          variant="outline"
+          leftIcon={<FaTrash />}
+          label="Удалить"
+          onClick={() => {
+            setSelectedRow(row);
+            setIsDeleteModalOpen(true);
+          }}
+        />
+      </div>
+      {type === 'TICKET' && row.Status === 'checked-in' && (
+        <div className={styles.documentActions}>
+          <Button
+            variant="outline"
+            leftIcon={<FaFileAlt />}
+            label="Билет"
+            onClick={() => handleDocumentGeneration(row, 'ticket')}
+          />
+          <Button
+            variant="outline"
+            leftIcon={<FaReceipt />}
+            label="Чек"
+            onClick={() => handleDocumentGeneration(row, 'receipt')}
+          />
+        </div>
+      )}
     </td>
   );
 
@@ -210,6 +615,8 @@ export const TableComponent = ({ type }: ITableProps) => {
           column as keyof (typeof TABLE_TRANSLATIONS)[typeof type]['columns']
         ] || column;
 
+      const tooltipContent = getFieldTooltip(column, type);
+
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { value } = e.target;
 
@@ -236,12 +643,36 @@ export const TableComponent = ({ type }: ITableProps) => {
             break;
 
           case 'PassportSeries':
-            if (!/^[A-ZА-Я]*$/.test(value)) return;
-            break;
+            // Преобразуем все буквы в заглавные и удаляем не-буквенные символы
+            const upperLetters = value
+              .toUpperCase()
+              .replace(/[^A-ZА-Я]/g, '')
+              .slice(0, 2);
+            setFormData({ ...formData, [column]: upperLetters });
+            return;
 
           case 'PassportNumber':
+            // Оставляем только цифры и ограничиваем до 7 символов
+            const numbers = value.replace(/\D/g, '').slice(0, 7);
+            setFormData({ ...formData, [column]: numbers });
+            return;
+
+          case 'Price':
+            // Проверяем, что введены только цифры
             if (!/^\d*$/.test(value)) return;
-            break;
+
+            const priceValue = Number(value);
+            // Проверяем ограничения на стоимость
+            if (priceValue > 2000) {
+              toast.error('Стоимость не может быть больше 2000 BYN');
+              return;
+            }
+            if (priceValue < 0) {
+              toast.error('Стоимость не может быть отрицательной');
+              return;
+            }
+            setFormData({ ...formData, [column]: value });
+            return;
         }
 
         setFormData({ ...formData, [column]: value });
@@ -314,7 +745,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Gender') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={genderOptions}
               value={formData[column]}
@@ -327,7 +761,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Role') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={roleOptions}
               value={formData[column]}
@@ -340,7 +777,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Status') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <Selector
               options={statusOptions}
               value={formData[column]}
@@ -358,7 +798,10 @@ export const TableComponent = ({ type }: ITableProps) => {
 
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <input
               type="date"
               value={formData[column]?.split('T')[0] || ''}
@@ -391,7 +834,10 @@ export const TableComponent = ({ type }: ITableProps) => {
 
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <input
               type="datetime-local"
               value={formData[column] || ''}
@@ -407,7 +853,10 @@ export const TableComponent = ({ type }: ITableProps) => {
       if (column === 'Capacity') {
         return (
           <div key={`field-${column}`} className={styles.field}>
-            <label>{columnLabel}</label>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
             <input
               type="number"
               value={formData[column] || ''}
@@ -420,9 +869,132 @@ export const TableComponent = ({ type }: ITableProps) => {
         );
       }
 
+      if (column === 'FlightID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <Selector
+              options={Object.entries(relatedData.flights).map(
+                ([id, number]) => ({
+                  value: id,
+                  label: number,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'AirplaneID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <Selector
+              options={Object.entries(relatedData.airplanes).map(
+                ([id, model]) => ({
+                  value: id,
+                  label: model,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'DepartureAirportID' || column === 'ArrivalAirportID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <Selector
+              options={Object.entries(relatedData.airports).map(
+                ([id, name]) => ({
+                  value: id,
+                  label: name,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'AirlineID') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <Selector
+              options={Object.entries(relatedData.airlines).map(
+                ([id, name]) => ({
+                  value: id,
+                  label: name,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'PassengerID' && type === 'TICKET') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <Selector
+              options={Object.entries(relatedData.passengers).map(
+                ([id, name]) => ({
+                  value: id,
+                  label: name,
+                }),
+              )}
+              value={formData[column]}
+              onChange={handleSelectorChange(column)}
+            />
+          </div>
+        );
+      }
+
+      if (column === 'Phone') {
+        return (
+          <div key={`field-${column}`} className={styles.field}>
+            <label>
+              {columnLabel}
+              <Tooltip content={tooltipContent} />
+            </label>
+            <PhoneInput
+              value={formData[column] || ''}
+              onChange={value => setFormData({ ...formData, [column]: value })}
+            />
+          </div>
+        );
+      }
+
       return (
         <div key={`field-${column}`} className={styles.field}>
-          <label>{columnLabel}</label>
+          <label>
+            {columnLabel}
+            <Tooltip content={tooltipContent} />
+          </label>
           <input
             type="text"
             value={formData[column] || ''}
@@ -467,8 +1039,41 @@ export const TableComponent = ({ type }: ITableProps) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
 
+  const isForeignKey = (column: string, tableType: EntityType): boolean => {
+    const foreignKeyMap: Record<EntityType, string[]> = {
+      TICKET: ['FlightID', 'PassengerID'],
+      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirportID'],
+      AIRPLANE: ['AirlineID'],
+      AIRPORT: [],
+      AIRLINE: [],
+      PASSENGER: [],
+    };
+
+    return foreignKeyMap[tableType]?.includes(column) || false;
+  };
+
   const formatCellValue = (value: any, column: string) => {
     if (value === null || value === undefined) return '-';
+
+    if (column === idFields[type]) {
+      return value;
+    }
+
+    if (isForeignKey(column, type)) {
+      switch (column) {
+        case 'FlightID':
+          return relatedData.flights[value] || value;
+        case 'PassengerID':
+          return relatedData.passengers[value] || value;
+        case 'AirplaneID':
+          return relatedData.airplanes[value] || value;
+        case 'DepartureAirportID':
+        case 'ArrivalAirportID':
+          return relatedData.airports[value] || value;
+        case 'AirlineID':
+          return relatedData.airlines[value] || value;
+      }
+    }
 
     if (column === 'DateOfBirth') {
       try {
@@ -580,6 +1185,10 @@ export const TableComponent = ({ type }: ITableProps) => {
     setSortConfig({ key, direction });
   };
 
+  const isRelatedField = (column: string): boolean => {
+    return isForeignKey(column, type);
+  };
+
   const renderTableHeader = () => (
     <thead>
       <tr>
@@ -596,20 +1205,32 @@ export const TableComponent = ({ type }: ITableProps) => {
               }}
               onClick={() => requestSort(column)}
             >
-              {isLoading ? (
-                <Skeleton />
-              ) : (
-                <div className={styles.columnHeader}>
-                  <span className={styles.columnLabel}>{columnLabel}</span>
-                  <FaSort
-                    className={
-                      sortConfig?.key === column
-                        ? styles.activeSortIcon
-                        : styles.inactiveSortIcon
-                    }
-                  />
-                </div>
-              )}
+              <div className={styles.columnHeader}>
+                <span
+                  className={`
+                    ${styles.columnLabel} 
+                    ${isRelatedField(column) ? styles.relatedColumn : ''}
+                  `}
+                >
+                  {isLoading ? (
+                    <Skeleton />
+                  ) : (
+                    <>
+                      {columnLabel}
+                      {isRelatedField(column) && (
+                        <span className={styles.relatedIcon}>⇄</span>
+                      )}
+                    </>
+                  )}
+                </span>
+                <FaSort
+                  className={
+                    sortConfig?.key === column
+                      ? styles.activeSortIcon
+                      : styles.inactiveSortIcon
+                  }
+                />
+              </div>
             </th>
           );
         })}
@@ -622,46 +1243,86 @@ export const TableComponent = ({ type }: ITableProps) => {
     </thead>
   );
 
-  const renderTableBody = () => (
-    <tbody>
-      {isLoading ? (
-        Array(itemsPerPage)
-          .fill(0)
-          .map((_, index) => (
-            <tr key={`skeleton-row-${index}`}>
-              {Array(columns.length + 1)
-                .fill(0)
-                .map((_, colIndex) => (
-                  <td key={`skeleton-cell-${index}-${colIndex}`}>
-                    <Skeleton />
-                  </td>
-                ))}
-            </tr>
-          ))
-      ) : filteredData.length > 0 && columns.length > 0 ? (
-        filteredData.slice(startIndex, endIndex).map(row => {
-          const hasMatch = searchQuery
-            ? Object.entries(row).some(([column, value]) => {
-                const searchValue =
-                  column === 'Gender'
-                    ? VALUE_TRANSLATIONS.Gender[
-                        value as keyof typeof VALUE_TRANSLATIONS.Gender
-                      ]
-                    : value;
-                return String(searchValue)
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase());
-              })
-            : false;
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+  };
+
+  const isRowMatchingSearch = (row: any): boolean => {
+    if (!searchQuery) return false;
+
+    return Object.entries(row).some(([column, value]) => {
+      const searchValue =
+        column === 'Gender'
+          ? VALUE_TRANSLATIONS.Gender[
+              value as keyof typeof VALUE_TRANSLATIONS.Gender
+            ]
+          : column === 'Role'
+            ? VALUE_TRANSLATIONS.Role[
+                value as keyof typeof VALUE_TRANSLATIONS.Role
+              ]
+            : column === 'Status'
+              ? VALUE_TRANSLATIONS.Status[
+                  value as keyof typeof VALUE_TRANSLATIONS.Status
+                ]
+              : formatCellValue(value, column);
+
+      return String(searchValue)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+    });
+  };
+
+  const renderTableBody = () => {
+    if (isLoading) {
+      return (
+        <tbody>
+          {Array(itemsPerPage)
+            .fill(0)
+            .map((_, index) => (
+              <tr key={`skeleton-row-${type}-${index}`}>
+                {Array(columns.length + 1)
+                  .fill(0)
+                  .map((_, colIndex) => (
+                    <td key={`skeleton-cell-${type}-${index}-${colIndex}`}>
+                      <Skeleton />
+                    </td>
+                  ))}
+              </tr>
+            ))}
+        </tbody>
+      );
+    }
+
+    if (!filteredData.length || !columns.length) {
+      return (
+        <tbody>
+          <tr>
+            <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
+              Нет данных для отображения
+            </td>
+          </tr>
+        </tbody>
+      );
+    }
+
+    return (
+      <tbody>
+        {filteredData.slice(startIndex, endIndex).map((row, index) => {
+          const uniqueId = `${type}-${row[idFields[type]]}-${index}`;
+          const hasMatch = isRowMatchingSearch(row);
 
           return (
             <tr
-              key={row[idFields[type]]}
+              key={uniqueId}
               className={hasMatch ? styles.highlightedRow : ''}
             >
               {columns.map(column => (
                 <td
-                  key={`${row[idFields[type]]}-${column}`}
+                  key={`${uniqueId}-${column}`}
+                  className={`${isRelatedField(column) ? styles.relatedCell : ''} ${
+                    hasMatch ? styles.highlightedCell : ''
+                  }`}
                   style={{
                     width: getColumnWidth(column),
                     minWidth: getColumnWidth(column),
@@ -673,31 +1334,23 @@ export const TableComponent = ({ type }: ITableProps) => {
               {renderActionButtons(row)}
             </tr>
           );
-        })
-      ) : (
-        <tr>
-          <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
-            Нет данных для отображения
-          </td>
-        </tr>
-      )}
-    </tbody>
-  );
+        })}
+      </tbody>
+    );
+  };
 
   const processFormData = (data: any, type: EntityType) => {
     const processedData = { ...data };
 
-    // Определяем поля, которые должны быть числами для каждой таблицы
     const numberFields: Record<EntityType, string[]> = {
       AIRPLANE: ['AirlineID', 'Capacity'],
-      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirpor tID'],
+      FLIGHT: ['AirplaneID', 'DepartureAirportID', 'ArrivalAirportID'],
       TICKET: ['FlightID', 'PassengerID', 'Price'],
       PASSENGER: [],
       AIRPORT: [],
       AIRLINE: [],
     };
 
-    // Преобразуем строковые значения в числовые для указанных полей
     numberFields[type].forEach(field => {
       if (processedData[field]) {
         processedData[field] = Number(processedData[field]);
@@ -711,22 +1364,18 @@ export const TableComponent = ({ type }: ITableProps) => {
     const processedData = processFormData(formData, type);
 
     if (!validateFormData(processedData, columns, idFields, type)) {
-      console.log('Проверка не удалась');
       return;
     }
 
     try {
       const result = await TableAPI.createRecord(type, processedData);
       if (result) {
-        console.log('Record added successfully:', result);
         setIsAddModalOpen(false);
         setFormData({});
         fetchTableData();
-      } else {
-        console.log('Failed to add record');
       }
     } catch (error) {
-      console.error('Error adding record:', error);
+      console.error('Ошибка при добавлении записи:', error);
     }
   };
 
@@ -784,7 +1433,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       column => column !== idFields[type] && column !== 'created_at',
     );
 
-    // Проверка возраста пассажира
     const validatePassengerAge = (birthDate: string) => {
       const birth = new Date(birthDate);
       const today = new Date();
@@ -809,7 +1457,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       return true;
     };
 
-    // Регулярные выражения для валидации
     const patterns = {
       onlyLetters: /^[A-Za-zА-Яа-яЁё\s-]+$/,
       onlyNumbers: /^\d+$/,
@@ -820,7 +1467,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       flightNumber: /^[A-Z]{2}\d{3,4}$/,
     };
 
-    // Проверка числовых значений
     const validateNumber = (value: number, min: number, field: string) => {
       if (value < min) {
         toast.error(`Поле "${field}" не может быть меньше ${min}`);
@@ -829,7 +1475,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       return true;
     };
 
-    // Проверка дат для рейса
     const validateFlightDates = (departure: string, arrival: string) => {
       const departureDate = new Date(departure);
       const arrivalDate = new Date(arrival);
@@ -852,13 +1497,11 @@ export const TableComponent = ({ type }: ITableProps) => {
     for (const field of requiredFields) {
       const value = formData[field];
 
-      // Базовая проверка на пустоту
       if (value === undefined || value === null || value === '') {
         toast.error(`Поле "${field}" не может быть пустым`);
         return false;
       }
 
-      // Валидация в зависимости от типа поля
       switch (field) {
         case 'DateOfBirth':
           if (type === 'PASSENGER' && !validatePassengerAge(value)) {
@@ -933,7 +1576,6 @@ export const TableComponent = ({ type }: ITableProps) => {
       }
     }
 
-    // Проверка дат для рейса
     if (type === 'FLIGHT') {
       if (!validateFlightDates(formData.DepartureTime, formData.ArrivalTime)) {
         return false;
@@ -943,29 +1585,29 @@ export const TableComponent = ({ type }: ITableProps) => {
     return true;
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      setSearchQuery(value);
-    }, 300); // Задержка в 300 мс
-  };
-
   const handleAddModalOpen = () => {
     const initialFormData =
       type === 'PASSENGER'
         ? {
             Gender: 'Male',
             Role: 'user',
+            FirstName: '',
+            LastName: '',
+            DateOfBirth: new Date().toISOString().split('T')[0],
+            Email: '',
+            Phone: '',
+            PassportSeries: '',
+            PassportNumber: '',
           }
         : {};
 
     setFormData(initialFormData);
     setIsAddModalOpen(true);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setRangeFilters({});
   };
 
   return (
@@ -1004,13 +1646,13 @@ export const TableComponent = ({ type }: ITableProps) => {
                         }, 0)
                       );
                     }, 0)}{' '}
-                    совпадений
+                    результатов
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <div className={styles.actions}>
+          <div className={styles.actionsHeader}>
             <Button
               variant="primary"
               leftIcon={<FaPlus />}
@@ -1023,6 +1665,7 @@ export const TableComponent = ({ type }: ITableProps) => {
                 variant="outline"
                 leftIcon={<FaFilter />}
                 label="Фильтры"
+                onClick={() => setIsFiltersOpen(true)}
                 disabled={isLoading}
               />
             </div>
@@ -1067,6 +1710,17 @@ export const TableComponent = ({ type }: ITableProps) => {
           </div>
         </div>
       </div>
+
+      <Filters
+        type={type}
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        activeFilters={activeFilters}
+        rangeFilters={rangeFilters}
+        onFilterChange={handleFilterChange}
+        onRangeToggle={handleRangeToggle}
+        onReset={handleFilterReset}
+      />
 
       <Modal
         isOpen={isAddModalOpen}

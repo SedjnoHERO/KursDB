@@ -6,14 +6,18 @@ import { toast } from 'sonner';
 import { Supabase } from '@api';
 import { useAuth } from '@config';
 import styles from './style.module.scss';
+import { patterns, formatPhone } from '@config';
 
 interface UserData {
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
-  address?: string;
-  role?: 'admin' | 'user';
+  gender: 'Male' | 'Female';
+  dateOfBirth: string;
+  passportSeries?: string;
+  passportNumber?: string;
+  role: 'user';
 }
 
 export const Auth = () => {
@@ -23,7 +27,10 @@ export const Auth = () => {
     firstName: '',
     lastName: '',
     phone: '',
-    address: '',
+    gender: 'Male',
+    dateOfBirth: '',
+    passportSeries: '',
+    passportNumber: '',
     role: 'user',
   });
 
@@ -62,16 +69,79 @@ export const Auth = () => {
     }
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+
+    let formattedValue = value;
+
+    switch (name) {
+      case 'phone':
+        const numbers = value.replace(/\D/g, '').slice(0, 12);
+        formattedValue = formatPhone(numbers);
+
+        console.log('Введенный номер:', formattedValue);
+        console.log('Номер без форматирования:', value.replace(/\D/g, ''));
+        break;
+      case 'passportSeries':
+        formattedValue = value.toUpperCase().slice(0, 2);
+        break;
+      case 'passportNumber':
+        formattedValue = value.replace(/\D/g, '').slice(0, 7);
+        break;
+      case 'firstName':
+      case 'lastName':
+        formattedValue = value.replace(/[^А-Яа-яЁё\s-]/g, '');
+        break;
+    }
+
+    setUserData(prev => ({ ...prev, [name]: formattedValue }));
+  };
+
+  const validateField = (
+    name: string,
+    value: string | undefined,
+  ): string | undefined => {
+    if (!value) return 'Поле обязательно для заполнения';
+
+    switch (name) {
+      case 'phone':
+        return patterns.phone.test(value)
+          ? undefined
+          : 'Неверный формат телефона';
+      case 'passportSeries':
+        return patterns.passportSeries.test(value)
+          ? undefined
+          : 'Серия паспорта должна содержать 2 буквы';
+      case 'passportNumber':
+        return patterns.passportNumber.test(value)
+          ? undefined
+          : 'Номер паспорта должен содержать 7 цифр';
+      case 'firstName':
+      case 'lastName':
+        return patterns.name.test(value)
+          ? undefined
+          : 'Имя должно содержать только буквы, пробелы и дефисы';
+      case 'email':
+        return patterns.email.test(value) ? undefined : 'Некорректный email';
+      default:
+        return undefined;
+    }
+  };
+
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!userData.firstName || !userData.lastName) {
-      toast.error('Заполните имя и фамилию');
-      return;
-    }
+    // Проверяем все поля
+    const errors: { [key: string]: string } = {};
+    Object.keys(userData).forEach(key => {
+      const error = validateField(key, userData[key as keyof UserData]);
+      if (error) errors[key] = error;
+    });
 
-    if (!userData.phone) {
-      toast.error('Укажите номер телефона');
+    if (Object.keys(errors).length > 0) {
+      Object.values(errors).forEach(error => toast.error(error));
       return;
     }
 
@@ -82,7 +152,10 @@ export const Auth = () => {
           FirstName: userData.firstName,
           LastName: userData.lastName,
           Phone: userData.phone,
-          Address: userData.address || null,
+          Gender: userData.gender,
+          DateOfBirth: userData.dateOfBirth,
+          PassportSeries: userData.passportSeries,
+          PassportNumber: userData.passportNumber,
           Role: 'user',
         },
       ]);
@@ -95,11 +168,6 @@ export const Auth = () => {
       console.error('Ошибка при регистрации:', error);
       toast.error('Произошла ошибка при регистрации');
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUserData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -163,25 +231,65 @@ export const Auth = () => {
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="Телефон"
+                    placeholder="+375 (##) 123-45-67"
                     value={userData.phone}
+                    onChange={handleInputChange}
+                    required
+                    maxLength={19}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <select
+                    name="gender"
+                    value={userData.gender}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="Male">Мужской</option>
+                    <option value="Female">Женский</option>
+                  </select>
+                </div>
+                <div className={styles.inputGroup}>
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    value={userData.dateOfBirth}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
                 <div className={styles.inputGroup}>
-                  <FaMapMarkerAlt className={styles.icon} />
                   <input
                     type="text"
-                    name="address"
-                    placeholder="Адрес"
-                    value={userData.address}
+                    name="passportSeries"
+                    placeholder="Серия паспорта"
+                    value={userData.passportSeries}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
-                <button type="submit" className={styles.submitButton}>
-                  Зарегистрироваться
-                </button>
+                <div className={styles.inputGroup}>
+                  <input
+                    type="text"
+                    name="passportNumber"
+                    placeholder="Номер паспорта"
+                    value={userData.passportNumber}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className={styles.buttonGroup}>
+                  <button
+                    type="button"
+                    className={styles.backButton}
+                    onClick={() => setStep('email')}
+                  >
+                    Назад
+                  </button>
+                  <button type="submit" className={styles.submitButton}>
+                    Зарегистрироваться
+                  </button>
+                </div>
               </form>
             </>
           )}
