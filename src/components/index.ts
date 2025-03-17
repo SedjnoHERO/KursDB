@@ -10,3 +10,4 @@ export { Footer } from './Footer';
 export { FlightCard } from './FlightCard';
 export { ProfileButton } from './ProfileButton';
 export { TicketCard } from './TicketCard';
+export { generateDocument, downloadDocument } from './DocumentGenerator';

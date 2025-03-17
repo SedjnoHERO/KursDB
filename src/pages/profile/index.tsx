@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import styles from './style.module.scss';
 import { Link } from 'react-router-dom';
 import { TicketCard } from '@components';
+import { generateDocument, downloadDocument } from '@components';
 
 interface UserProfile {
   PassengerID?: number;
@@ -30,6 +31,10 @@ interface Ticket {
   time: string;
   price: number;
   status: 'booked' | 'checked-in' | 'canceled';
+  seatNumber?: string;
+  flightId: string;
+  flightNumber: string;
+  departureTime: string;
 }
 
 interface ProfileHeaderProps {
@@ -63,6 +68,7 @@ interface TicketResponse {
   Price: number;
   FLIGHT: {
     FlightID: number;
+    FlightNumber: string;
     DepartureTime: string;
     DepartureAirport: { City: string };
     ArrivalAirport: { City: string };
@@ -252,6 +258,7 @@ export const Profile = () => {
             Price,
             FLIGHT (
               FlightID,
+              FlightNumber,
               DepartureTime,
               DepartureAirport:DepartureAirportID(City),
               ArrivalAirport:ArrivalAirportID(City)
@@ -284,6 +291,9 @@ export const Profile = () => {
                 | 'booked'
                 | 'checked-in'
                 | 'canceled',
+              flightId: ticket.FLIGHT.FlightID.toString(),
+              flightNumber: ticket.FLIGHT.FlightNumber,
+              departureTime: ticket.FLIGHT.DepartureTime,
             })),
           );
         }
@@ -351,6 +361,35 @@ export const Profile = () => {
         .eq('TicketID', ticketId);
 
       if (error) throw error;
+
+      // После успешной оплаты генерируем документы
+      if (action === 'pay') {
+        const ticketData = tickets.find(t => t.id === ticketId);
+        if (ticketData) {
+          try {
+            downloadDocument('ticket', {
+              ...ticketData,
+              FlightNumber: ticketData.flightNumber,
+              FirstName: profile.FirstName,
+              LastName: profile.LastName,
+              DepartureTime: ticketData.departureTime,
+              SeatNumber: ticketData.seatNumber,
+            });
+
+            downloadDocument('receipt', {
+              ...ticketData,
+              TicketID: ticketData.id,
+              Price: ticketData.price,
+              PurchaseDate: new Date().toISOString(),
+            });
+
+            toast.success('Документы успешно сгенерированы');
+          } catch (error) {
+            console.error('Ошибка при генерации документов:', error);
+            toast.error('Ошибка при генерации документов');
+          }
+        }
+      }
 
       setTickets(prev =>
         prev.map(ticket =>

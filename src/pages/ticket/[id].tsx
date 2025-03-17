@@ -400,7 +400,9 @@ export const TicketDetail = () => {
                 <RouteInfo from={ticket.from} to={ticket.to} />
                 <FlightDetails ticket={ticket} />
               </div>
-              {!isExistingTicket && <AdditionalInfo ticket={ticket} />}
+              {/* {!isExistingTicket &&  */}
+              <AdditionalInfo ticket={ticket} />
+              {/* // />} */}
               {isExistingTicket && (
                 <div className={styles.ticketStatus}>
                   <h2>Статус билета</h2>
