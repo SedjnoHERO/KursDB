@@ -57,34 +57,12 @@ const generateQRCode = async (text: string): Promise<Uint8Array> => {
 const getUserInfo = (data: any) => {
   const user = {
     fullName: 'Не указан',
-    email: 'Не указан',
-    phone: 'Не указан',
-    passport: 'Не указан',
     role: 'user',
-    gender: 'Не указан',
-    dateOfBirth: 'Не указан',
   };
 
   if (data.PASSENGER) {
     if (data.PASSENGER.FirstName && data.PASSENGER.LastName) {
       user.fullName = `${data.PASSENGER.FirstName} ${data.PASSENGER.LastName}`;
-    }
-    if (data.PASSENGER.Email) {
-      user.email = data.PASSENGER.Email;
-    }
-    if (data.PASSENGER.Phone) {
-      user.phone = data.PASSENGER.Phone;
-    }
-    if (data.PASSENGER.PassportSeries && data.PASSENGER.PassportNumber) {
-      user.passport = `${data.PASSENGER.PassportSeries}${data.PASSENGER.PassportNumber}`;
-    }
-    if (data.PASSENGER.Gender) {
-      user.gender = data.PASSENGER.Gender === 'Male' ? 'Мужской' : 'Женский';
-    }
-    if (data.PASSENGER.DateOfBirth) {
-      user.dateOfBirth = new Date(
-        data.PASSENGER.DateOfBirth,
-      ).toLocaleDateString('ru-RU');
     }
     if (data.PASSENGER.Role) {
       user.role = data.PASSENGER.Role;
@@ -95,23 +73,6 @@ const getUserInfo = (data: any) => {
     if (data.User.FirstName && data.User.LastName) {
       user.fullName = `${data.User.FirstName} ${data.User.LastName}`;
     }
-    if (data.User.Email) {
-      user.email = data.User.Email;
-    }
-    if (data.User.Phone) {
-      user.phone = data.User.Phone;
-    }
-    if (data.User.PassportSeries && data.User.PassportNumber) {
-      user.passport = `${data.User.PassportSeries}${data.User.PassportNumber}`;
-    }
-    if (data.User.Gender) {
-      user.gender = data.User.Gender === 'Male' ? 'Мужской' : 'Женский';
-    }
-    if (data.User.DateOfBirth) {
-      user.dateOfBirth = new Date(data.User.DateOfBirth).toLocaleDateString(
-        'ru-RU',
-      );
-    }
     if (data.User.Role) {
       user.role = data.User.Role;
     }
@@ -119,21 +80,6 @@ const getUserInfo = (data: any) => {
 
   if (data.FirstName && data.LastName) {
     user.fullName = `${data.FirstName} ${data.LastName}`;
-  }
-  if (data.Email) {
-    user.email = data.Email;
-  }
-  if (data.Phone) {
-    user.phone = data.Phone;
-  }
-  if (data.PassportSeries && data.PassportNumber) {
-    user.passport = `${data.PassportSeries}${data.PassportNumber}`;
-  }
-  if (data.Gender) {
-    user.gender = data.Gender === 'Male' ? 'Мужской' : 'Женский';
-  }
-  if (data.DateOfBirth) {
-    user.dateOfBirth = new Date(data.DateOfBirth).toLocaleDateString('ru-RU');
   }
   if (data.Role) {
     user.role = data.Role;
@@ -222,9 +168,9 @@ export const generateDocument = async (
       const rightColumnInfo = [
         'ИНФОРМАЦИЯ О ПАССАЖИРЕ',
         `Пассажир: ${userInfo.fullName}`,
-        `Место: ${data.SeatNumber || 'Не указано'}`,
+        `Место: ${data.TICKET.SeatNumber || 'Не указано'}`,
         '',
-        `Статус: ${data.Status || 'Оплачен'}`,
+        `Статус: Оплачен`,
       ];
 
       leftColumnInfo.forEach((line, index) => {
@@ -337,23 +283,19 @@ export const generateDocument = async (
 
       const receiptInfo = [
         { text: 'ИНФОРМАЦИЯ ОБ ОПЛАТЕ', isBold: true },
-        { text: `Номер билета: ${data.TicketID}`, isBold: false },
         {
-          text: `Дата покупки: ${new Date(data.PurchaseDate).toLocaleString('ru-RU')}`,
+          text: `Дата печати: ${new Date(data.PurchaseDate).toLocaleString('ru-RU')}`,
           isBold: false,
         },
         { text: '', isBold: false },
         { text: 'ДЕТАЛИ ПЛАТЕЖА', isBold: true },
         { text: `Стоимость билета: ${data.Price} BYN`, isBold: false },
-        {
-          text: `НДС (20%): ${(data.Price * 0.2).toFixed(2)} BYN`,
-          isBold: false,
-        },
+        { text: '', isBold: false },
         { text: `ИТОГО: ${data.Price} BYN`, isBold: true },
         { text: '', isBold: false },
         { text: 'ИНФОРМАЦИЯ О РЕЙСЕ', isBold: true },
         { text: `Номер рейса: ${data.FlightNumber}`, isBold: false },
-        { text: `Маршрут: ${data.from} ➔ ${data.to}`, isBold: false },
+        { text: `Маршрут: ${data.from} - ${data.to}`, isBold: false },
       ];
 
       let yPos = page.getHeight() - 80;
@@ -430,10 +372,10 @@ export const generateDocument = async (
   }
 };
 
-export const downloadDocument = async (
-  type: 'ticket' | 'receipt',
-  data: any,
-) => {
+export const downloadDocument = async ({
+  type,
+  data,
+}: DocumentGeneratorProps) => {
   try {
     console.log('Начало генерации документа. Тип:', type);
     console.log('Данные для документа:', data);
