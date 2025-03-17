@@ -338,6 +338,7 @@ export const TableComponent = ({ type }: ITableProps) => {
   }, [sortedData, activeFilters, type]);
 
   const renderActionButtons = (row: any) => (
+    //поместить в 2х2
     <td className={styles.actions}>
       <Button
         variant="outline"
