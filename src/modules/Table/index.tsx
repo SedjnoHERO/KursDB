@@ -23,7 +23,7 @@ import {
   generateDocument,
   downloadDocument,
 } from '@components';
-import { TableAPI, EntityType } from '@api';
+import { TableAPI, Supabase, EntityType } from '@api';
 import {
   TABLE_TRANSLATIONS,
   VALUE_TRANSLATIONS,
@@ -38,6 +38,53 @@ import styles from './style.module.scss';
 
 interface ITableProps {
   type: EntityType;
+}
+
+interface SupabaseFlightData {
+  FlightID: number;
+  FlightNumber: string;
+  DepartureTime: string;
+  ArrivalTime: string;
+  AIRPLANE: {
+    Model: string;
+    Capacity: number;
+    AIRLINE: {
+      Name: string;
+      Country: string;
+    };
+  };
+  DepartureAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+    Country: string;
+  };
+  ArrivalAirport: {
+    City: string;
+    Name: string;
+    Code: string;
+    Country: string;
+  };
+}
+
+interface SupabasePassengerData {
+  PassengerID: number;
+  FirstName: string;
+  LastName: string;
+  Email: string;
+  Phone: string;
+  PassportSeries: string;
+  PassportNumber: string;
+  Gender: string;
+  DateOfBirth: string;
+}
+
+interface SupabaseTicketData {
+  TicketID: number;
+  Status: string;
+  SeatNumber: string;
+  Price: number;
+  PurchaseDate: string;
 }
 
 export const TableComponent = ({ type }: ITableProps) => {
@@ -337,59 +384,185 @@ export const TableComponent = ({ type }: ITableProps) => {
     });
   }, [sortedData, activeFilters, type]);
 
+  const handleDocumentGeneration = async (
+    row: any,
+    type: 'ticket' | 'receipt',
+  ) => {
+    try {
+      if (!row.FlightID) {
+        toast.error('Отсутствует ID рейса');
+        return;
+      }
+
+      if (!row.PassengerID) {
+        toast.error('Отсутствует ID пассажира');
+        return;
+      }
+
+      const { data: flightData, error: flightError } = await Supabase.from(
+        'FLIGHT',
+      )
+        .select(
+          `
+          FlightID,
+          FlightNumber,
+          DepartureTime,
+          ArrivalTime,
+          AIRPLANE: AirplaneID (
+            Model,
+            Capacity,
+            AIRLINE: AirlineID (
+              Name,
+              Country
+            )
+          ),
+          DepartureAirport: DepartureAirportID (
+            City,
+            Name,
+            Code,
+            Country
+          ),
+          ArrivalAirport: ArrivalAirportID (
+            City,
+            Name,
+            Code,
+            Country
+          )
+        `,
+        )
+        .eq('FlightID', row.FlightID)
+        .single<SupabaseFlightData>();
+
+      if (flightError || !flightData) {
+        toast.error('Не удалось получить данные рейса');
+        return;
+      }
+
+      const { data: passengerData, error: passengerError } =
+        await Supabase.from('PASSENGER')
+          .select(
+            `
+          PassengerID,
+          FirstName,
+          LastName,
+          Email,
+          Phone,
+          PassportSeries,
+          PassportNumber,
+          Gender,
+          DateOfBirth
+        `,
+          )
+          .eq('PassengerID', row.PassengerID)
+          .single<SupabasePassengerData>();
+
+      if (passengerError || !passengerData) {
+        toast.error('Не удалось получить данные пассажира');
+        return;
+      }
+
+      const { data: ticketData, error: ticketError } = await Supabase.from(
+        'TICKET',
+      )
+        .select(
+          `
+          TicketID,
+          Status,
+          SeatNumber,
+          Price,
+          PurchaseDate
+        `,
+        )
+        .eq('TicketID', row.TicketID)
+        .single<SupabaseTicketData>();
+
+      if (ticketError || !ticketData) {
+        toast.error('Не удалось получить данные билета');
+        return;
+      }
+
+      const documentData = {
+        FlightNumber: flightData.FlightNumber,
+        DepartureTime: flightData.DepartureTime,
+        ArrivalTime: flightData.ArrivalTime,
+        from: flightData.DepartureAirport.City,
+        to: flightData.ArrivalAirport.City,
+        TicketID: row.TicketID,
+        Price: ticketData.Price,
+        PurchaseDate: ticketData.PurchaseDate || new Date().toISOString(),
+        TICKET: {
+          SeatNumber: ticketData.SeatNumber,
+          Status: ticketData.Status,
+        },
+        AIRPLANE: {
+          Model: flightData.AIRPLANE.Model,
+          Capacity: flightData.AIRPLANE.Capacity,
+          AIRLINE: {
+            Name: flightData.AIRPLANE.AIRLINE.Name,
+            Country: flightData.AIRPLANE.AIRLINE.Country,
+          },
+        },
+        PASSENGER: {
+          PassengerID: passengerData.PassengerID,
+          FirstName: passengerData.FirstName,
+          LastName: passengerData.LastName,
+          Email: passengerData.Email,
+          Phone: passengerData.Phone,
+          PassportSeries: passengerData.PassportSeries,
+          PassportNumber: passengerData.PassportNumber,
+          Gender: passengerData.Gender,
+          DateOfBirth: passengerData.DateOfBirth,
+        },
+      };
+
+      await downloadDocument({ type, data: documentData });
+      toast.success(
+        `${type === 'ticket' ? 'Билет' : 'Чек'} успешно сгенерирован`,
+      );
+    } catch (error) {
+      console.error('Ошибка при генерации документа:', error);
+      toast.error('Не удалось сгенерировать документ');
+    }
+  };
+
   const renderActionButtons = (row: any) => (
-    //поместить в 2х2
     <td className={styles.actions}>
-      <Button
-        variant="outline"
-        leftIcon={<FaEdit />}
-        label="Изменить"
-        onClick={() => {
-          setSelectedRow(row);
-          setFormData(row);
-          setIsEditModalOpen(true);
-        }}
-      />
-      <Button
-        variant="outline"
-        leftIcon={<FaTrash />}
-        label="Удалить"
-        onClick={() => {
-          setSelectedRow(row);
-          setIsDeleteModalOpen(true);
-        }}
-      />
+      <div className={styles.mainActions}>
+        <Button
+          variant="outline"
+          leftIcon={<FaEdit />}
+          label="Изменить"
+          onClick={() => {
+            setSelectedRow(row);
+            setFormData(row);
+            setIsEditModalOpen(true);
+          }}
+        />
+        <Button
+          variant="outline"
+          leftIcon={<FaTrash />}
+          label="Удалить"
+          onClick={() => {
+            setSelectedRow(row);
+            setIsDeleteModalOpen(true);
+          }}
+        />
+      </div>
       {type === 'TICKET' && row.Status === 'checked-in' && (
-        <>
+        <div className={styles.documentActions}>
           <Button
             variant="outline"
             leftIcon={<FaFileAlt />}
             label="Билет"
-            onClick={() => {
-              downloadDocument('ticket', {
-                ...row,
-                FirstName: row.PASSENGER?.FirstName,
-                LastName: row.PASSENGER?.LastName,
-                FlightNumber: row.FLIGHT?.FlightNumber,
-                DepartureTime: row.FLIGHT?.DepartureTime,
-              });
-            }}
+            onClick={() => handleDocumentGeneration(row, 'ticket')}
           />
           <Button
             variant="outline"
             leftIcon={<FaReceipt />}
             label="Чек"
-            onClick={() => {
-              downloadDocument('receipt', {
-                ...row,
-                FirstName: row.PASSENGER?.FirstName,
-                LastName: row.PASSENGER?.LastName,
-                FlightNumber: row.FLIGHT?.FlightNumber,
-                DepartureTime: row.FLIGHT?.DepartureTime,
-              });
-            }}
+            onClick={() => handleDocumentGeneration(row, 'receipt')}
           />
-        </>
+        </div>
       )}
     </td>
   );
@@ -1432,6 +1605,11 @@ export const TableComponent = ({ type }: ITableProps) => {
     setIsAddModalOpen(true);
   };
 
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setRangeFilters({});
+  };
+
   return (
     <>
       <div className={styles.tableWrapper}>
@@ -1474,7 +1652,7 @@ export const TableComponent = ({ type }: ITableProps) => {
               </div>
             </div>
           </div>
-          <div className={styles.actions}>
+          <div className={styles.actionsHeader}>
             <Button
               variant="primary"
               leftIcon={<FaPlus />}

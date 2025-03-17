@@ -15,7 +15,7 @@ import {
 import { TableAPI, Supabase } from '@api';
 import { toast } from 'sonner';
 import styles from './style.module.scss';
-import { Button, downloadDocument } from '@components';
+import { downloadDocument } from '@components';
 
 interface AircraftInfo {
   Model: string;
@@ -369,12 +369,12 @@ export const TicketCard = ({
               <FaCalendarAlt /> {ticket.date}
               <FaClock /> {ticket.time}
             </p>
-            {aircraftInfo && (
+            {/* {aircraftInfo && (
               <p className={styles.aircraftInfo}>
                 Авиакомпания: {aircraftInfo.airline} | Самолет:{' '}
                 {aircraftInfo.model} | Вместимость: {aircraftInfo.capacity} мест
               </p>
-            )}
+            )} */}
           </div>
           <div className={styles.price}>
             <p>{ticket.price} BYN</p>
@@ -401,7 +401,7 @@ export const TicketCard = ({
       {ticket.status === 'booked' && (
         <div className={styles.ticketActions}>
           <button
-            className={styles.payButton}
+            className={`${styles.button} ${styles.payButton}`}
             onClick={e => {
               e.preventDefault();
               handleAction('pay');
@@ -410,7 +410,7 @@ export const TicketCard = ({
             <FaCreditCard /> Оплатить
           </button>
           <button
-            className={styles.cancelButton}
+            className={`${styles.button} ${styles.cancelButton}`}
             onClick={e => {
               e.preventDefault();
               handleAction('cancel');
@@ -423,18 +423,18 @@ export const TicketCard = ({
       <div className={styles.actions}>
         {ticket.status === 'checked-in' && (
           <>
-            <Button
-              variant="outline"
-              leftIcon={<FaFileAlt />}
-              label="Билет"
+            <button
+              className={`${styles.button} ${styles.documentButton}`}
               onClick={() => handleDocumentGeneration('ticket')}
-            />
-            <Button
-              variant="outline"
-              leftIcon={<FaReceipt />}
-              label="Чек"
+            >
+              <FaFileAlt /> Билет
+            </button>
+            <button
+              className={`${styles.button} ${styles.documentButton}`}
               onClick={() => handleDocumentGeneration('receipt')}
-            />
+            >
+              <FaReceipt /> Чек
+            </button>
           </>
         )}
       </div>
