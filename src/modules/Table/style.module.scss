@@ -425,6 +425,7 @@ tbody tr {
 
   .actions {
     display: flex;
+    flex-direction: row;
     justify-content: flex-end;
     gap: 12px;
     margin-top: 10px;
@@ -440,17 +441,79 @@ tbody tr {
 
 .actions {
   display: flex;
-  gap: 8px;
-  
-  button {
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+
+  .mainActions {
     display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 8px;
-    padding: 8px 16px;
-    font-size: 12px;
-    white-space: nowrap;
   }
+
+  .documentActions {
+    display: flex;
+    gap: 8px;
+
+    .button {
+      flex: 1; // Равномерное распределение пространства
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ddd;
+
+      svg {
+        font-size: 16px;
+      }
+
+      &:hover {
+        background: #f8f8f8;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+    }
+
+    .documentButton {
+      background: linear-gradient(135deg, #6b8afd 0%, #4466f2 100%);
+      color: white;
+      border: none;
+
+      &:hover {
+        background: linear-gradient(135deg, #5d7cf9 0%, #3557f2 100%);
+      }
+
+      svg {
+        transition: transform 0.2s ease;
+      }
+
+      &:hover svg {
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+.tableWrapper {
+  .actionsHeader {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 12px;
+  } 
 }
 
 td.actions {
